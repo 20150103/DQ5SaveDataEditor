@@ -52,7 +52,7 @@ namespace DQ5SaveDataEditor
 					val = value;
 
 					// 袋のアイテム種類を変更したらアイテム名も更新
-					if (this.Pos >= POS_FUKURO_TYPE_S && this.Pos <= POS_FUKURO_TYPE_S + FUKURO_SIZE)
+					if (this.Pos >= POS_FUKURO_TYPE_S && this.Pos <= POS_FUKURO_TYPE_S + FUKURO_SIZE * FUKURO_TYPE_SIZE)
 					{
 						if (val == 0)
 							this.Text = "未使用";
@@ -157,7 +157,12 @@ namespace DQ5SaveDataEditor
 		/// <summary>
 		/// 編集可能な袋アイテム数
 		/// </summary>
-		const int FUKURO_SIZE = 30;
+		const int FUKURO_SIZE = 50;
+
+		/// <summary>
+		/// 袋のアイテム種類のサイズ
+		/// </summary>
+		const int FUKURO_TYPE_SIZE = 2;
 
 		/// <summary>
 		/// 袋アイテム種類の先頭アドレス
@@ -214,7 +219,7 @@ namespace DQ5SaveDataEditor
 						{
 							try
 							{
-								var val = Convert.ToUInt32(values[0], 16);
+								var val = Convert.ToUInt32(values[0]);
 								var name = values[1];
 								if (!ItemCodes.ContainsKey(val))
 									ItemCodes.Add(val, name);
@@ -271,7 +276,7 @@ namespace DQ5SaveDataEditor
 			{
 				item = new CData();
 				item.Title = "袋{0:D3}の種類".FormatEx(i + 1);
-				item.Size = 2;
+				item.Size = FUKURO_TYPE_SIZE;
 				item.Pos = POS_FUKURO_TYPE_S + i * item.Size;
 				Items.Add(item);
 
