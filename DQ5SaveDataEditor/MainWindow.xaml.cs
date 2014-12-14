@@ -157,7 +157,7 @@ namespace DQ5SaveDataEditor
 		/// <summary>
 		/// 編集可能な袋アイテム数
 		/// </summary>
-		const int FUKURO_SIZE = 50;
+		const int FUKURO_SIZE = 150;
 
 		/// <summary>
 		/// 袋のアイテム種類のサイズ
@@ -266,7 +266,7 @@ namespace DQ5SaveDataEditor
 			for (var i = 0; i < MONEY_SIZE; i++)
 			{
 				item = new CData();
-				item.Title = "所持金0xFF^{0}の位".FormatEx(i);
+				item.Title = "所持金iバイト目".FormatEx(i);
 				item.Pos = POS_MONEY + i * item.Size;
 				Items.Add(item);
 			}
@@ -427,7 +427,9 @@ namespace DQ5SaveDataEditor
 				for (var i = 0; i < item.Size; i++)
 				{
 					var val = this.data[item.Pos + i];
-					item.Value0 += (uint)((val ^ item.Keys[i]) * Math.Pow(0xFF, i));
+					var xor = val ^ item.Keys[i];
+					xor *= (int)Math.Pow(0x100, i);
+					item.Value0 += (uint)xor;
 				}
 
 				item.Value = item.Value0;
@@ -476,7 +478,7 @@ namespace DQ5SaveDataEditor
 			{
 				var pos = POS_MONEY + i;
 				var val = Items.First(item => item.Pos == pos);
-				sum += val.Value * Math.Pow(0xff, i);
+				sum += val.Value * Math.Pow(0x100, i);
 			}
 
 			return (int)sum;
