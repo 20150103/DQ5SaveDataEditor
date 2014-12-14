@@ -266,7 +266,7 @@ namespace DQ5SaveDataEditor
 			for (var i = 0; i < MONEY_SIZE; i++)
 			{
 				item = new CData();
-				item.Title = "所持金0xFF^{0}の位".FormatEx(i - 1);
+				item.Title = "所持金0xFF^{0}の位".FormatEx(i);
 				item.Pos = POS_MONEY + i * item.Size;
 				Items.Add(item);
 			}
@@ -423,10 +423,11 @@ namespace DQ5SaveDataEditor
 						item.Keys[i] = Keys[item.Pos + i];
 				}
 
+				item.Value0 = 0;
 				for (var i = 0; i < item.Size; i++)
 				{
 					var val = this.data[item.Pos + i];
-					item.Value0 += (uint)((val ^ item.Keys[i]) * Math.Pow(16, i));
+					item.Value0 += (uint)((val ^ item.Keys[i]) * Math.Pow(0xFF, i));
 				}
 
 				item.Value = item.Value0;
