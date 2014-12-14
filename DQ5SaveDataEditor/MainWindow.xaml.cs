@@ -10,13 +10,11 @@ using Microsoft.Win32;
 namespace DQ5SaveDataEditor
 {
 	/// <summary>
-	/// セーブデータエディタ
+	/// スマホ版DQ5セーブデータエディタ
 	/// - 所持金と袋のアイテム(種類、個数)を編集することが可能
-	/// - サムチェックを調べるのは面倒なので、サムエラーにならないように
-	///   増減が0になる範囲で編集すること
-	/// セーブデータは難読化して保存されている
-	/// バイトアドレスごとに特定のキーでXORされている→初期データ(未作成の冒険の書のdat)をみればわかる
-	/// サムチェックは、XORする前の値を加算しているところまでは判明している
+	/// - サムの更新はしないので、変更値の合計が0になるように編集する必要がある
+	/// - 変更値の合計が0位外の値の場合、サムチェックエラーになり、冒険の書が消える
+	/// readme.txtみてね
 	/// </summary>
 	public partial class MainWindow : Window
 	{
@@ -138,12 +136,13 @@ namespace DQ5SaveDataEditor
 
 		/// <summary>
 		/// アイテムコードファイル名
-		/// フォーマット：コード(16進)、タブ、名称
+		/// フォーマット：コード(10進)、タブ、名称
 		/// </summary>
 		const string FILE_ITEM_CODES = "ItemCodes.txt";
 
 		/// <summary>
 		/// XORキーファイル
+		/// フォーマット：アドレス(16進)、タブ、XORキー
 		/// </summary>
 		const string FILE_KEYS = "Keys.txt";
 
@@ -244,7 +243,6 @@ namespace DQ5SaveDataEditor
 						{
 							try
 							{
-								// 16進のアドレス
 								var pos = Convert.ToInt32(values[0], 16);
 								var key = Convert.ToByte(values[1], 16);
 
@@ -310,8 +308,8 @@ namespace DQ5SaveDataEditor
 						if (minus)
 							diff = diff * -1;
 
-						this.txtDelta.Text = "{0}{1}".FormatEx(minus ? "-" : "", diff);
-						this.txtDeltaHex.Text = "{0}{1:X4}".FormatEx(minus ? "-" : "", diff);
+						this.txtDelta.Text = "{0}{1}".FormatEx(minus ? "-" : "+", diff);
+						this.txtDeltaHex.Text = "{0}{1:X4}".FormatEx(minus ? "-" : "+", diff);
 					};
 			}
 		}
