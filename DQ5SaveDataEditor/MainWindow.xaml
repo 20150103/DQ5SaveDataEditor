@@ -50,6 +50,10 @@
 							<Label Content="{Binding Value0}" Width="80" HorizontalContentAlignment="Right"/>
 							<TextBox Text="{Binding Value,UpdateSourceTrigger=PropertyChanged}" Width="30" HorizontalContentAlignment="Right"/>
 							<Label Content="{Binding Text}" Width="200" HorizontalContentAlignment="Left"/>
+							<Button Visibility="{Binding DeleteButtonVisibility}"
+									ToolTip="このアイテムを削除して以降のアイテムをずらします"
+									Content="削除"
+									Click="cmdDeleteItem_Click" Tag="{Binding Pos}"/>
 						</StackPanel>
 					</DataTemplate>
 				</ItemsControl.ItemTemplate>

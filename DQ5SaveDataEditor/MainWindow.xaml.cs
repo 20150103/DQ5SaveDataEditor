@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using Microsoft.Win32;
 
 namespace DQ5SaveDataEditor
@@ -13,7 +14,7 @@ namespace DQ5SaveDataEditor
 	/// スマホ版DQ5セーブデータエディタ
 	/// - 所持金と袋のアイテム(種類、個数)を編集することが可能
 	/// - サムの更新はしないので、変更値の合計が0になるように編集する必要がある
-	/// - 変更値の合計が0位外の値の場合、サムチェックエラーになり、冒険の書が消える
+	/// - 変更値の合計が0以外の値の場合、サムチェックエラーになり、冒険の書が消える
 	/// readme.txtみてね
 	/// </summary>
 	public partial class MainWindow : Window
@@ -50,7 +51,7 @@ namespace DQ5SaveDataEditor
 					val = value;
 
 					// 袋のアイテム種類を変更したらアイテム名も更新
-					if (this.Pos >= POS_FUKURO_TYPE_S && this.Pos <= POS_FUKURO_TYPE_S + FUKURO_SIZE * FUKURO_TYPE_SIZE)
+					if (this.isFukuroItem)
 					{
 						if (val == 0)
 							this.Text = "未使用";
@@ -67,6 +68,8 @@ namespace DQ5SaveDataEditor
 
 					// 差分を更新
 					updateDiff();
+
+					this.OnPropertyChanged("Value");
 				}
 			}
 
@@ -98,6 +101,13 @@ namespace DQ5SaveDataEditor
 			/// XORキー
 			/// </summary>
 			public byte[] Keys { get; set; }
+
+			public Visibility DeleteButtonVisibility { get { return this.isFukuroItem ? Visibility.Visible : Visibility.Collapsed; } }
+
+			/// <summary>
+			/// 袋のアイテムか否か
+			/// </summary>
+			public bool isFukuroItem { get { return this.Pos >= POS_FUKURO_TYPE_S && this.Pos <= POS_FUKURO_TYPE_S + FUKURO_SIZE * FUKURO_TYPE_SIZE; } }
 
 			#endregion
 
@@ -163,6 +173,8 @@ namespace DQ5SaveDataEditor
 		/// </summary>
 		const int FUKURO_TYPE_SIZE = 2;
 
+		const int FUKURO_COUNT_SIZE = 1;
+
 		/// <summary>
 		/// 袋アイテム種類の先頭アドレス
 		/// </summary>
@@ -194,6 +206,10 @@ namespace DQ5SaveDataEditor
 		/// XORキー
 		/// </summary>
 		static Dictionary<int, byte> Keys;
+
+		static List<CData> fukuroTypes;
+
+		static List<CData> fukuroCounts;
 
 		#endregion
 
@@ -270,6 +286,9 @@ namespace DQ5SaveDataEditor
 			}
 
 			// 袋
+			fukuroTypes = new List<CData>();
+			fukuroCounts = new List<CData>();
+
 			for (var i = 0; i < FUKURO_SIZE; i++)
 			{
 				item = new CData();
@@ -277,11 +296,13 @@ namespace DQ5SaveDataEditor
 				item.Size = FUKURO_TYPE_SIZE;
 				item.Pos = POS_FUKURO_TYPE_S + i * item.Size;
 				Items.Add(item);
+				fukuroTypes.Add(item);
 
 				item = new CData();
 				item.Title = "袋{0:D3}の個数".FormatEx(i + 1);
 				item.Pos = POS_FUKURO_COUNT_S + i * item.Size;
 				Items.Add(item);
+				fukuroCounts.Add(item);
 			}
 		}
 
@@ -502,6 +523,40 @@ namespace DQ5SaveDataEditor
 		}
 
 		#endregion
+
+		/// <summary>
+		/// 現在のアイテムを削除
+		/// 以降のアイテムの位置を一つ前にずらす
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		void cmdDeleteItem_Click(object sender, RoutedEventArgs e)
+		{
+			var btn = sender as Button;
+			var pos = (int)(btn.Tag);
+
+			// 袋アイテム番号を取得
+			var idx = fukuroTypes.FindIndex(f => f.Pos == pos);
+
+			while (idx < fukuroTypes.Count - 1)
+			{
+				var type = fukuroTypes[idx];
+				var count = fukuroCounts[idx];
+
+				if (type.Value == 0 && count.Value == 0)
+					break;
+
+				++idx;
+				type.Value = fukuroTypes[idx].Value;
+				count.Value = fukuroCounts[idx].Value;
+			}
+
+			if (idx == fukuroTypes.Count - 1)
+			{
+				fukuroTypes[idx].Value = 0;
+				fukuroCounts[idx].Value = 0;
+			}
+		}
 	}
 }
 
