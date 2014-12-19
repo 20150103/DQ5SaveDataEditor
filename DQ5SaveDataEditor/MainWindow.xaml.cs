@@ -67,7 +67,8 @@ namespace DQ5SaveDataEditor
 					}
 
 					// 差分を更新
-					updateDiff();
+					Diff += this.CalcDiff();
+					updateDiff(Diff);
 
 					this.OnPropertyChanged("Value");
 				}
@@ -109,30 +110,16 @@ namespace DQ5SaveDataEditor
 			/// </summary>
 			public bool isFukuroItem { get { return this.Pos >= POS_FUKURO_TYPE_S && this.Pos <= POS_FUKURO_TYPE_S + FUKURO_SIZE * FUKURO_TYPE_SIZE; } }
 
+			/// <summary>
+			/// アイテムを表示するか否か
+			/// </summary>
 			public Visibility Visibility { get; set; }
+
+			public static long Diff;
 
 			#endregion
 
 			public event PropertyChangedEventHandler PropertyChanged;
-
-			public void OnPropertyChanged(string name)
-			{
-				if (PropertyChanged != null)
-				{
-					PropertyChanged(this, new PropertyChangedEventArgs(name));
-				}
-			}
-
-			public CData()
-			{
-				this.Size = 1;
-				this.Visibility = Visibility.Visible;
-			}
-
-			public override string ToString()
-			{
-				return "{0} {1:X2} {2:X2}".FormatEx(this.Title, this.Value0, this.Value);
-			}
 
 			/// <summary>
 			/// 所持金更新
@@ -142,10 +129,48 @@ namespace DQ5SaveDataEditor
 			/// <summary>
 			/// 差分更新
 			/// </summary>
-			public static Action updateDiff;
+			public static Action<long> updateDiff;
+
+			public CData()
+			{
+				this.Size = 1;
+				this.Visibility = Visibility.Visible;
+			}
+
+			#region Public Functions
+
+			public void OnPropertyChanged(string name)
+			{
+				if (PropertyChanged != null)
+				{
+					PropertyChanged(this, new PropertyChangedEventArgs(name));
+				}
+			}
+
+			public override string ToString()
+			{
+				return "{0} {1:X2} {2:X2}".FormatEx(this.Title, this.Value0, this.Value);
+			}
+
+			public long CalcDiff()
+			{
+				long diff = 0;
+				var bytes0 = BitConverter.GetBytes(this.Value0);
+				var bytes = BitConverter.GetBytes(this.Value);
+				for (var i = 0; i < this.Size; i++)
+				{
+					diff += bytes[i];
+					diff -= bytes0[i];
+				}
+				return diff;
+			}
+
+			#endregion
 		}
 
 		#endregion
+
+		#region Consts
 
 		/// <summary>
 		/// アイテムコードファイル名
@@ -164,6 +189,9 @@ namespace DQ5SaveDataEditor
 		/// </summary>
 		const int POS_MONEY = 0x0014;
 
+		/// <summary>
+		/// 所持金のサイズ
+		/// </summary>
 		const int MONEY_SIZE = 4;
 
 		/// <summary>
@@ -176,6 +204,9 @@ namespace DQ5SaveDataEditor
 		/// </summary>
 		const int FUKURO_TYPE_SIZE = 2;
 
+		/// <summary>
+		/// 袋のアイテム個数のサイズ
+		/// </summary>
 		const int FUKURO_COUNT_SIZE = 1;
 
 		/// <summary>
@@ -194,7 +225,7 @@ namespace DQ5SaveDataEditor
 		const int POS_MONSTER_S = 0x0894;
 
 		/// <summary>
-		/// 取り扱うモンスター数
+		/// 編集可能なモンスター数
 		/// </summary>
 		const int MONSTER_SIZE = 20;
 
@@ -204,15 +235,17 @@ namespace DQ5SaveDataEditor
 		const int MONSTER_DATA_SIZE = 204;
 
 		const int OFFSET_M_CUR_HP = 0;
-		const int OFFSET_M_MAX_HP = 2;
-		const int OFFSET_M_CUR_MP = 4;
-		const int OFFSET_M_MAX_MP = 6;
+		const int OFFSET_M_MAX_HP = OFFSET_M_CUR_HP + 2;
+		const int OFFSET_M_CUR_MP = OFFSET_M_CUR_HP + 4;
+		const int OFFSET_M_MAX_MP = OFFSET_M_CUR_HP + 6;
 
-		const int OFFSET_M_STR = 56; // ちから
-		const int OFFSET_M_DEF = 57; // みのまもり
-		const int OFFSET_M_AGI = 58; // すばやさ
-		const int OFFSET_M_WIT = 59; // かしこさ
-		const int OFFSET_M_LUC = 60; // うんのよさ
+		const int OFFSET_M_STR = OFFSET_M_CUR_HP + 56; // ちから
+		const int OFFSET_M_DEF = OFFSET_M_CUR_HP + 57; // みのまもり
+		const int OFFSET_M_AGI = OFFSET_M_CUR_HP + 58; // すばやさ
+		const int OFFSET_M_WIT = OFFSET_M_CUR_HP + 59; // かしこさ
+		const int OFFSET_M_LUC = OFFSET_M_CUR_HP + 60; // うんのよさ
+
+		#endregion
 
 		#region Fields
 
@@ -231,11 +264,10 @@ namespace DQ5SaveDataEditor
 		/// </summary>
 		static Dictionary<int, byte> Keys;
 
-		static List<CData> fukuroTypes;
-
-		static List<CData> fukuroCounts;
-
-		static List<CData> allitems;
+		/// <summary>
+		/// 全ての編集対象データ
+		/// </summary>
+		static List<CData> allItems;
 
 		/// <summary>
 		/// 編集対象データ(所持金、袋)
@@ -247,17 +279,28 @@ namespace DQ5SaveDataEditor
 		/// </summary>
 		static ObservableCollection<CData> Monsters;
 
+		/// <summary>
+		/// 袋アイテムの種類(番号順)
+		/// </summary>
+		static List<CData> fukuroTypes;
+
+		/// <summary>
+		/// 袋アイテムの個数(番号順)
+		/// </summary>
+		static List<CData> fukuroCounts;
+
 		#endregion
 
 		#region Constructors
 
 		static MainWindow()
 		{
-			allitems = new List<CData>();
+			allItems = new List<CData>();
 			ItemCodes = new Dictionary<uint, string>();
 			Keys = new Dictionary<int, byte>();
 
-			// アイテムコード一覧を読み取る
+			#region アイテムコード一覧を読み取る
+
 			var file = Path.Combine(Environment.CurrentDirectory, FILE_ITEM_CODES);
 			if (File.Exists(file))
 			{
@@ -282,7 +325,10 @@ namespace DQ5SaveDataEditor
 				}
 			}
 
-			// キー一覧を読み取る
+			#endregion
+
+			#region キー一覧を読み取る
+
 			file = Path.Combine(Environment.CurrentDirectory, FILE_KEYS);
 			if (File.Exists(file))
 			{
@@ -308,23 +354,25 @@ namespace DQ5SaveDataEditor
 				}
 			}
 
-			// 編集対象アイテムを初期化
-			Items = new ObservableCollection<CData>();
+			#endregion
 
+			#region 所持金、袋アイテムを初期化
+
+			Items = new ObservableCollection<CData>();
 			CData item = null;
 
-			// 所持金
+			// - 所持金
 			for (var i = 0; i < MONEY_SIZE; i++)
 			{
 				item = new CData();
 				item.Title = "所持金iバイト目".FormatEx(i);
 				item.Pos = POS_MONEY + i * item.Size;
-				
+
 				Items.Add(item);
-				allitems.Add(item);
+				allItems.Add(item);
 			}
 
-			// 袋
+			// - 袋
 			fukuroTypes = new List<CData>();
 			fukuroCounts = new List<CData>();
 
@@ -334,116 +382,124 @@ namespace DQ5SaveDataEditor
 				item.Title = "袋{0:D3}の種類".FormatEx(i + 1);
 				item.Size = FUKURO_TYPE_SIZE;
 				item.Pos = POS_FUKURO_TYPE_S + i * item.Size;
-				
+
 				Items.Add(item);
 				fukuroTypes.Add(item);
-				allitems.Add(item);
+				allItems.Add(item);
 
 				item = new CData();
 				item.Title = "袋{0:D3}の個数".FormatEx(i + 1);
 				item.Pos = POS_FUKURO_COUNT_S + i * item.Size;
-				
+
 				Items.Add(item);
 				fukuroCounts.Add(item);
-				allitems.Add(item);
+				allItems.Add(item);
 			}
+
+			#endregion
+
+			#region 預かり所モンスターを初期化
 
 			Monsters = new ObservableCollection<CData>();
 			for (var i = 0; i < MONSTER_SIZE; i++)
 			{
+				var pos_head = POS_MONSTER_S + i * MONSTER_DATA_SIZE;
+
 				item = new CData();
 				item.Title = "モンスター{0:D3}の現在HP".FormatEx(i + 1);
 				item.Size = 2;
-				item.Pos = POS_MONSTER_S + i * MONSTER_DATA_SIZE + OFFSET_M_CUR_HP;
-				
+				item.Pos = pos_head + OFFSET_M_CUR_HP;
+
 				Monsters.Add(item);
-				allitems.Add(item);
+				allItems.Add(item);
 
 				item = new CData();
 				item.Title = "モンスター{0:D3}の最大HP".FormatEx(i + 1);
 				item.Size = 2;
-				item.Pos = POS_MONSTER_S + i * MONSTER_DATA_SIZE + OFFSET_M_MAX_HP;
-				
+				item.Pos = pos_head + OFFSET_M_MAX_HP;
+
 				Monsters.Add(item);
-				allitems.Add(item);
+				allItems.Add(item);
 
 				item = new CData();
 				item.Title = "モンスター{0:D3}の現在MP".FormatEx(i + 1);
 				item.Size = 2;
-				item.Pos = POS_MONSTER_S + i * MONSTER_DATA_SIZE + OFFSET_M_CUR_MP;
-				
+				item.Pos = pos_head + OFFSET_M_CUR_MP;
+
 				Monsters.Add(item);
-				allitems.Add(item);
+				allItems.Add(item);
 
 				item = new CData();
 				item.Title = "モンスター{0:D3}の最大MP".FormatEx(i + 1);
 				item.Size = 2;
-				item.Pos = POS_MONSTER_S + i * MONSTER_DATA_SIZE + OFFSET_M_MAX_MP;
-				
+				item.Pos = pos_head + OFFSET_M_MAX_MP;
+
 				Monsters.Add(item);
-				allitems.Add(item);
+				allItems.Add(item);
 
 				item = new CData();
 				item.Title = "モンスター{0:D3}のちから".FormatEx(i + 1);
 				item.Size = 1;
-				item.Pos = POS_MONSTER_S + i * MONSTER_DATA_SIZE + OFFSET_M_STR;
-				
+				item.Pos = pos_head + OFFSET_M_STR;
+
 				Monsters.Add(item);
-				allitems.Add(item);
+				allItems.Add(item);
 
 				item = new CData();
 				item.Title = "モンスター{0:D3}のみのまもり".FormatEx(i + 1);
 				item.Size = 1;
-				item.Pos = POS_MONSTER_S + i * MONSTER_DATA_SIZE + OFFSET_M_DEF;
-				
+				item.Pos = pos_head + OFFSET_M_DEF;
+
 				Monsters.Add(item);
-				allitems.Add(item);
+				allItems.Add(item);
 
 				item = new CData();
 				item.Title = "モンスター{0:D3}のすばやさ".FormatEx(i + 1);
 				item.Size = 1;
-				item.Pos = POS_MONSTER_S + i * MONSTER_DATA_SIZE + OFFSET_M_AGI;
-				
+				item.Pos = pos_head + OFFSET_M_AGI;
+
 				Monsters.Add(item);
-				allitems.Add(item);
-				
+				allItems.Add(item);
+
 				item = new CData();
 				item.Title = "モンスター{0:D3}のかしこさ".FormatEx(i + 1);
 				item.Size = 1;
-				item.Pos = POS_MONSTER_S + i * MONSTER_DATA_SIZE + OFFSET_M_WIT;
-				
+				item.Pos = pos_head + OFFSET_M_WIT;
+
 				Monsters.Add(item);
-				allitems.Add(item);
+				allItems.Add(item);
 
 				item = new CData();
 				item.Title = "モンスター{0:D3}のうんのよさ".FormatEx(i + 1);
 				item.Size = 1;
-				item.Pos = POS_MONSTER_S + i * MONSTER_DATA_SIZE + OFFSET_M_LUC;
-				
+				item.Pos = pos_head + OFFSET_M_LUC;
+
 				Monsters.Add(item);
-				allitems.Add(item);
+				allItems.Add(item);
 			}
+
+			#endregion
 		}
 
 		public MainWindow()
 		{
 			InitializeComponent();
 
-			this.lstData.ItemsSource = Items;
-			this.lstMonsters.ItemsSource = Monsters;
+			this.lstData.ItemsSource = Items;			// 所持金、袋アイテム
+			this.lstMonsters.ItemsSource = Monsters;	// 預かり所モンスター
 
 			// 所持金更新用
 			if (CData.updateMoney == null)
 			{
-				CData.updateMoney = () => this.txtMoney.Text = CalcMoney().ToString();
+				CData.updateMoney = () => this.txtMoney.Text = calcMoney().ToString();
 			}
 
 			// 差分更新用
 			if (CData.updateDiff == null)
 			{
-				CData.updateDiff = () =>
+				CData.updateDiff = (d) =>
 					{
-						var diff = calcDiff();
+						var diff = d;
 						var minus = diff < 0;
 
 						if (minus)
@@ -479,6 +535,9 @@ namespace DQ5SaveDataEditor
 
 					// データをコントロールに反映
 					this.DataToUIControls();
+
+					// 初期化
+					this.ClearUIControls();
 				}
 			}
 			catch (Exception ex)
@@ -490,8 +549,20 @@ namespace DQ5SaveDataEditor
 		// データを保存
 		void cmdSaveData(object sender, RoutedEventArgs e)
 		{
-			var dret = MessageBox.Show("上書きします", "確認",
-				MessageBoxButton.OKCancel, MessageBoxImage.Question);
+			// 差分チェック
+			// - 計算してみる
+			var diff = calcDiff();
+
+			var msg = string.Empty;
+
+			if (diff != CData.Diff)
+				msg = "差分がおかしいかもしれないけれど、上書きしますか";
+			else if (diff != 0)
+				msg = "差分が0ではないけれど、上書きしますか";
+			else
+				msg = "上書きします";
+
+			var dret = MessageBox.Show(msg, "確認", MessageBoxButton.OKCancel, MessageBoxImage.Question);
 			if (dret == MessageBoxResult.OK)
 			{
 				try
@@ -547,102 +618,7 @@ namespace DQ5SaveDataEditor
 			this.ClearUIControls();
 		}
 
-		#endregion
-
-		#region Private Functions
-
-		// データ→表示
-		void DataToUIControls()
-		{
-			foreach (var item in allitems)
-			{
-				if (Keys.ContainsKey(item.Pos))
-				{
-					for (var i = 0; i < item.Size; i++)
-						item.Keys[i] = Keys[item.Pos + i];
-				}
-
-				item.Value0 = 0;
-				for (var i = 0; i < item.Size; i++)
-				{
-					var val = this.data[item.Pos + i];
-					var xor = val ^ item.Keys[i];
-					xor *= (int)Math.Pow(0x100, i);
-					item.Value0 += (uint)xor;
-				}
-
-				item.Value = item.Value0;
-				item.OnPropertyChanged("Value0");
-				item.OnPropertyChanged("Value");
-			}
-		}
-
-		// 表示→データ
-		void UIControlsToData()
-		{
-			foreach (var item in allitems)
-			{
-				// バイト配列に変換
-				var bytes = BitConverter.GetBytes(item.Value);
-
-				// XOR
-				for (var i = 0; i < item.Size; i++)
-					this.data[item.Pos + i] = (byte)(bytes[i] ^ item.Keys[i]);
-			}
-		}
-
-		void ClearUIControls()
-		{
-			// 所持金
-			this.txtMoney.Text = string.Empty;
-
-			// データ
-			foreach (var item in allitems)
-			{
-				item.Value = item.Value0;
-				item.OnPropertyChanged("Value");
-			}
-		}
-
-		void ShowError(Exception ex)
-		{
-			var msg = "エラー発生{0}{1}".FormatEx(Environment.NewLine, ex);
-			MessageBox.Show(msg, "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
-		}
-
-		static int CalcMoney()
-		{
-			var sum = 0d;
-			for (var i = 0; i < MONEY_SIZE; i++)
-			{
-				var pos = POS_MONEY + i;
-				var val = Items.First(item => item.Pos == pos);
-				sum += val.Value * Math.Pow(0x100, i);
-			}
-
-			return (int)sum;
-		}
-
-		static long calcDiff()
-		{
-			long diff = 0;
-			foreach (var item in allitems)
-			{
-				// バイト配列に変換して差分を計算する
-				var bytes0 = BitConverter.GetBytes(item.Value0);
-				var bytes = BitConverter.GetBytes(item.Value);
-
-				for (var i = 0; i < item.Size; i++)
-				{
-					diff += bytes[i];
-					diff -= bytes0[i];
-				}
-			}
-
-			return diff;
-		}
-
-		#endregion
+		#region 解析用
 
 		/// <summary>
 		/// 現在のアイテムを削除
@@ -746,6 +722,98 @@ namespace DQ5SaveDataEditor
 			}
 		}
 
+		#endregion
+
+		#endregion
+
+		#region Private Functions
+
+		// データ→表示
+		void DataToUIControls()
+		{
+			foreach (var item in allItems)
+			{
+				if (Keys.ContainsKey(item.Pos))
+				{
+					for (var i = 0; i < item.Size; i++)
+						item.Keys[i] = Keys[item.Pos + i];
+				}
+
+				item.Value0 = 0;
+				for (var i = 0; i < item.Size; i++)
+				{
+					var val = this.data[item.Pos + i];
+					var xor = val ^ item.Keys[i];
+					xor *= (int)Math.Pow(0x100, i);
+					item.Value0 += (uint)xor;
+				}
+
+				item.OnPropertyChanged("Value0");
+			}
+		}
+
+		// 表示→データ
+		void UIControlsToData()
+		{
+			foreach (var item in allItems)
+			{
+				// バイト配列に変換
+				var bytes = BitConverter.GetBytes(item.Value);
+
+				// XOR
+				for (var i = 0; i < item.Size; i++)
+					this.data[item.Pos + i] = (byte)(bytes[i] ^ item.Keys[i]);
+			}
+		}
+
+		void ClearUIControls()
+		{
+			// 所持金
+			this.txtMoney.Text = string.Empty;
+
+			// データ
+			foreach (var item in allItems)
+			{
+				item.Value = item.Value0;
+				item.OnPropertyChanged("Value");
+			}
+
+			// 差分
+			CData.Diff = 0;
+			this.txtDelta.Text = "0";
+			this.txtDeltaHex.Text = "0";
+		}
+
+		void ShowError(Exception ex)
+		{
+			var msg = "エラー発生{0}{1}".FormatEx(Environment.NewLine, ex);
+			MessageBox.Show(msg, "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+		}
+
+		static int calcMoney()
+		{
+			var sum = 0d;
+			for (var i = 0; i < MONEY_SIZE; i++)
+			{
+				var pos = POS_MONEY + i;
+				var val = Items.First(item => item.Pos == pos);
+				sum += val.Value * Math.Pow(0x100, i);
+			}
+
+			return (int)sum;
+		}
+
+		static long calcDiff()
+		{
+			long diff = 0;
+			foreach (var item in allItems)
+			{
+				diff += item.CalcDiff();
+			}
+
+			return diff;
+		}
+
 		int ToInt(string str, int fromBase = 10)
 		{
 			try
@@ -755,6 +823,7 @@ namespace DQ5SaveDataEditor
 			catch { }
 			return -1;
 		}
+
+		#endregion
 	}
 }
-
