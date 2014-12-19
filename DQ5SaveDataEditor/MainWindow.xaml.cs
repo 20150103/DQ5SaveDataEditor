@@ -188,17 +188,38 @@ namespace DQ5SaveDataEditor
 		/// </summary>
 		const int POS_FUKURO_COUNT_S = 0x0258;
 
+		/// <summary>
+		/// モンスターの先頭アドレス(暫定)
+		/// </summary>
+		const int POS_MONSTER_S = 0x0894;
+
+		/// <summary>
+		/// 取り扱うモンスター数
+		/// </summary>
+		const int MONSTER_SIZE = 20;
+
+		/// <summary>
+		/// モンスター1匹分のデータサイズ
+		/// </summary>
+		const int MONSTER_DATA_SIZE = 204;
+
+		const int OFFSET_M_CUR_HP = 0;
+		const int OFFSET_M_MAX_HP = 2;
+		const int OFFSET_M_CUR_MP = 4;
+		const int OFFSET_M_MAX_MP = 6;
+
+		const int OFFSET_M_STR = 56; // ちから
+		const int OFFSET_M_DEF = 57; // みのまもり
+		const int OFFSET_M_AGI = 58; // すばやさ
+		const int OFFSET_M_WIT = 59; // かしこさ
+		const int OFFSET_M_LUC = 60; // うんのよさ
+
 		#region Fields
 
 		/// <summary>
 		/// 生データ
 		/// </summary>
 		byte[] data;
-
-		/// <summary>
-		/// 編集対象データ
-		/// </summary>
-		static ObservableCollection<CData> Items;
 
 		/// <summary>
 		/// アイテムコード表
@@ -214,12 +235,25 @@ namespace DQ5SaveDataEditor
 
 		static List<CData> fukuroCounts;
 
+		static List<CData> allitems;
+
+		/// <summary>
+		/// 編集対象データ(所持金、袋)
+		/// </summary>
+		static ObservableCollection<CData> Items;
+
+		/// <summary>
+		/// 編集対象データ(モンスター)
+		/// </summary>
+		static ObservableCollection<CData> Monsters;
+
 		#endregion
 
 		#region Constructors
 
 		static MainWindow()
 		{
+			allitems = new List<CData>();
 			ItemCodes = new Dictionary<uint, string>();
 			Keys = new Dictionary<int, byte>();
 
@@ -285,7 +319,9 @@ namespace DQ5SaveDataEditor
 				item = new CData();
 				item.Title = "所持金iバイト目".FormatEx(i);
 				item.Pos = POS_MONEY + i * item.Size;
+				
 				Items.Add(item);
+				allitems.Add(item);
 			}
 
 			// 袋
@@ -298,14 +334,94 @@ namespace DQ5SaveDataEditor
 				item.Title = "袋{0:D3}の種類".FormatEx(i + 1);
 				item.Size = FUKURO_TYPE_SIZE;
 				item.Pos = POS_FUKURO_TYPE_S + i * item.Size;
+				
 				Items.Add(item);
 				fukuroTypes.Add(item);
+				allitems.Add(item);
 
 				item = new CData();
 				item.Title = "袋{0:D3}の個数".FormatEx(i + 1);
 				item.Pos = POS_FUKURO_COUNT_S + i * item.Size;
+				
 				Items.Add(item);
 				fukuroCounts.Add(item);
+				allitems.Add(item);
+			}
+
+			Monsters = new ObservableCollection<CData>();
+			for (var i = 0; i < MONSTER_SIZE; i++)
+			{
+				item = new CData();
+				item.Title = "モンスター{0:D3}の現在HP".FormatEx(i + 1);
+				item.Size = 2;
+				item.Pos = POS_MONSTER_S + i * MONSTER_DATA_SIZE + OFFSET_M_CUR_HP;
+				
+				Monsters.Add(item);
+				allitems.Add(item);
+
+				item = new CData();
+				item.Title = "モンスター{0:D3}の最大HP".FormatEx(i + 1);
+				item.Size = 2;
+				item.Pos = POS_MONSTER_S + i * MONSTER_DATA_SIZE + OFFSET_M_MAX_HP;
+				
+				Monsters.Add(item);
+				allitems.Add(item);
+
+				item = new CData();
+				item.Title = "モンスター{0:D3}の現在MP".FormatEx(i + 1);
+				item.Size = 2;
+				item.Pos = POS_MONSTER_S + i * MONSTER_DATA_SIZE + OFFSET_M_CUR_MP;
+				
+				Monsters.Add(item);
+				allitems.Add(item);
+
+				item = new CData();
+				item.Title = "モンスター{0:D3}の最大MP".FormatEx(i + 1);
+				item.Size = 2;
+				item.Pos = POS_MONSTER_S + i * MONSTER_DATA_SIZE + OFFSET_M_MAX_MP;
+				
+				Monsters.Add(item);
+				allitems.Add(item);
+
+				item = new CData();
+				item.Title = "モンスター{0:D3}のちから".FormatEx(i + 1);
+				item.Size = 1;
+				item.Pos = POS_MONSTER_S + i * MONSTER_DATA_SIZE + OFFSET_M_STR;
+				
+				Monsters.Add(item);
+				allitems.Add(item);
+
+				item = new CData();
+				item.Title = "モンスター{0:D3}のみのまもり".FormatEx(i + 1);
+				item.Size = 1;
+				item.Pos = POS_MONSTER_S + i * MONSTER_DATA_SIZE + OFFSET_M_DEF;
+				
+				Monsters.Add(item);
+				allitems.Add(item);
+
+				item = new CData();
+				item.Title = "モンスター{0:D3}のすばやさ".FormatEx(i + 1);
+				item.Size = 1;
+				item.Pos = POS_MONSTER_S + i * MONSTER_DATA_SIZE + OFFSET_M_AGI;
+				
+				Monsters.Add(item);
+				allitems.Add(item);
+				
+				item = new CData();
+				item.Title = "モンスター{0:D3}のかしこさ".FormatEx(i + 1);
+				item.Size = 1;
+				item.Pos = POS_MONSTER_S + i * MONSTER_DATA_SIZE + OFFSET_M_WIT;
+				
+				Monsters.Add(item);
+				allitems.Add(item);
+
+				item = new CData();
+				item.Title = "モンスター{0:D3}のうんのよさ".FormatEx(i + 1);
+				item.Size = 1;
+				item.Pos = POS_MONSTER_S + i * MONSTER_DATA_SIZE + OFFSET_M_LUC;
+				
+				Monsters.Add(item);
+				allitems.Add(item);
 			}
 		}
 
@@ -314,6 +430,7 @@ namespace DQ5SaveDataEditor
 			InitializeComponent();
 
 			this.lstData.ItemsSource = Items;
+			this.lstMonsters.ItemsSource = Monsters;
 
 			// 所持金更新用
 			if (CData.updateMoney == null)
@@ -437,7 +554,7 @@ namespace DQ5SaveDataEditor
 		// データ→表示
 		void DataToUIControls()
 		{
-			foreach (var item in Items)
+			foreach (var item in allitems)
 			{
 				if (Keys.ContainsKey(item.Pos))
 				{
@@ -463,7 +580,7 @@ namespace DQ5SaveDataEditor
 		// 表示→データ
 		void UIControlsToData()
 		{
-			foreach (var item in Items)
+			foreach (var item in allitems)
 			{
 				// バイト配列に変換
 				var bytes = BitConverter.GetBytes(item.Value);
@@ -480,7 +597,7 @@ namespace DQ5SaveDataEditor
 			this.txtMoney.Text = string.Empty;
 
 			// データ
-			foreach (var item in Items)
+			foreach (var item in allitems)
 			{
 				item.Value = item.Value0;
 				item.OnPropertyChanged("Value");
@@ -509,7 +626,7 @@ namespace DQ5SaveDataEditor
 		static long calcDiff()
 		{
 			long diff = 0;
-			foreach (var item in Items)
+			foreach (var item in allitems)
 			{
 				// バイト配列に変換して差分を計算する
 				var bytes0 = BitConverter.GetBytes(item.Value0);
