@@ -91,7 +91,7 @@ namespace DQ5SaveDataEditor
 			/// 内容
 			/// </summary>
 			public string Text { get; set; }
-			
+
 			/// <summary>
 			/// アドレス
 			/// </summary>
@@ -109,6 +109,8 @@ namespace DQ5SaveDataEditor
 			/// </summary>
 			public bool isFukuroItem { get { return this.Pos >= POS_FUKURO_TYPE_S && this.Pos <= POS_FUKURO_TYPE_S + FUKURO_SIZE * FUKURO_TYPE_SIZE; } }
 
+			public Visibility Visibility { get; set; }
+
 			#endregion
 
 			public event PropertyChangedEventHandler PropertyChanged;
@@ -124,6 +126,7 @@ namespace DQ5SaveDataEditor
 			public CData()
 			{
 				this.Size = 1;
+				this.Visibility = Visibility.Visible;
 			}
 
 			public override string ToString()
@@ -191,7 +194,7 @@ namespace DQ5SaveDataEditor
 		/// 生データ
 		/// </summary>
 		byte[] data;
-		
+
 		/// <summary>
 		/// 編集対象データ
 		/// </summary>
@@ -556,6 +559,84 @@ namespace DQ5SaveDataEditor
 				fukuroTypes[idx].Value = 0;
 				fukuroCounts[idx].Value = 0;
 			}
+		}
+
+		void cmdDispData_Click(object sender, RoutedEventArgs e)
+		{
+			this.lstDebug.ItemsSource = null;
+			var from = this.ToInt(this.txtFrom.Text, 16);
+			var to = this.ToInt(this.txtTo.Text, 16);
+			if (to >= this.data.Length)
+				to = this.data.Length - 1;
+			var size = this.ToInt(this.txtSize.Text);
+
+			if (from >= 0 && to >= 0 && size >= 0)
+			{
+				var items = new ObservableCollection<CData>();
+
+				var pos = from;
+				while (pos <= to)
+				{
+					var item = new CData();
+					item.Title = "調査中:{0:X4} ".FormatEx(pos);
+					item.Size = size;
+					item.Pos = pos;
+					items.Add(item);
+
+					pos += size;
+
+					// XORキー
+					if (Keys.ContainsKey(item.Pos))
+					{
+						for (var i = 0; i < item.Size; i++)
+							item.Keys[i] = Keys[item.Pos + i];
+					}
+
+					// 値読み取り
+					item.Value0 = 0;
+					for (var i = 0; i < item.Size; i++)
+					{
+						var val = this.data[item.Pos + i];
+						var xor = val ^ item.Keys[i];
+						xor *= (int)Math.Pow(0x100, i);
+						item.Value0 += (uint)xor;
+					}
+
+					item.Value = item.Value0;
+					item.OnPropertyChanged("Value0");
+					item.OnPropertyChanged("Value");
+				}
+				this.lstDebug.ItemsSource = items;
+			}
+		}
+
+		void cmdFilter_Click(object sender, RoutedEventArgs e)
+		{
+			if (this.lstDebug.ItemsSource != null)
+			{
+				var from = this.ToInt(this.txtLower.Text);
+				var to = this.ToInt(this.txtUpper.Text);
+				if (to == -1)
+					to = int.MaxValue;
+
+				var items = this.lstDebug.ItemsSource as ObservableCollection<CData>;
+
+				foreach (var item in items)
+				{
+					item.Visibility = item.Value >= from && item.Value <= to ? Visibility.Visible : Visibility.Collapsed;
+					item.OnPropertyChanged("Visibility");
+				}
+			}
+		}
+
+		int ToInt(string str, int fromBase = 10)
+		{
+			try
+			{
+				return Convert.ToInt32(str, fromBase);
+			}
+			catch { }
+			return -1;
 		}
 	}
 }

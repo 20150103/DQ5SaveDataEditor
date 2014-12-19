@@ -28,37 +28,88 @@
 				<Label Content="G"/>
 			</StackPanel>
 		</StackPanel>
-		<StackPanel Orientation="Horizontal" DockPanel.Dock="Top">
-			<Label>名称</Label>
-			<Label>初期値</Label>
-			<Label>値</Label>
-			<Label>説明</Label>
-		</StackPanel>
-		<ScrollViewer HorizontalScrollBarVisibility="Auto"
+		<TabControl>
+			<TabItem Header="所持金、袋">
+				<DockPanel>
+				<StackPanel Orientation="Horizontal" DockPanel.Dock="Top">
+					<Label>名称</Label>
+					<Label>初期値</Label>
+					<Label>値</Label>
+					<Label>説明</Label>
+				</StackPanel>
+					<ScrollViewer HorizontalScrollBarVisibility="Auto"
 					  VerticalScrollBarVisibility="Auto">
-			<ItemsControl Name="lstData">
-				<ItemsControl.ItemsPanel>
-					<ItemsPanelTemplate>
-						<!--<WrapPanel Orientation="Vertical" Height="400" HorizontalAlignment="Left"/>-->
-						<StackPanel Orientation="Vertical"></StackPanel>
-					</ItemsPanelTemplate>
-				</ItemsControl.ItemsPanel>
-				<ItemsControl.ItemTemplate>
-					<DataTemplate>
-						<StackPanel Orientation="Horizontal" Margin="1">
-							<Label Content="{Binding Title}" Width="150"/>
-							<Label Content="{Binding Value0}" Width="80" HorizontalContentAlignment="Right"/>
-							<TextBox Text="{Binding Value,UpdateSourceTrigger=PropertyChanged}" Width="30" HorizontalContentAlignment="Right"/>
-							<Label Content="{Binding Text}" Width="200" HorizontalContentAlignment="Left"/>
-							<Button Visibility="{Binding DeleteButtonVisibility}"
-									ToolTip="このアイテムを削除して以降のアイテムをずらします"
-									Content="削除"
-									Click="cmdDeleteItem_Click" Tag="{Binding Pos}"/>
-						</StackPanel>
-					</DataTemplate>
-				</ItemsControl.ItemTemplate>
-			</ItemsControl>
-		</ScrollViewer>
+						<ItemsControl Name="lstData">
+							<ItemsControl.ItemsPanel>
+								<ItemsPanelTemplate>
+									<!--<WrapPanel Orientation="Vertical" Height="400" HorizontalAlignment="Left"/>-->
+									<StackPanel Orientation="Vertical"></StackPanel>
+								</ItemsPanelTemplate>
+							</ItemsControl.ItemsPanel>
+							<ItemsControl.ItemTemplate>
+								<DataTemplate>
+									<StackPanel Orientation="Horizontal" Margin="1">
+										<Label Content="{Binding Title}" Width="150"/>
+										<Label Content="{Binding Value0}" Width="80" HorizontalContentAlignment="Right"/>
+										<TextBox Text="{Binding Value,UpdateSourceTrigger=PropertyChanged}" Width="80" HorizontalContentAlignment="Right"/>
+										<Label Content="{Binding Text}" Width="200" HorizontalContentAlignment="Left"/>
+										<Button Visibility="{Binding DeleteButtonVisibility}"
+												ToolTip="このアイテムを削除して以降のアイテムをずらします"
+												Content="削除"
+												Click="cmdDeleteItem_Click" Tag="{Binding Pos}"/>
+									</StackPanel>
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+					</ScrollViewer>
+				</DockPanel>
+			</TabItem>
+			<TabItem Header="解析用">
+				<DockPanel>
+					<StackPanel Orientation="Horizontal" DockPanel.Dock="Top">
+						<TextBox Name="txtFrom" Width="60" ToolTip="16進として解釈" HorizontalContentAlignment="Right"/>
+						<Label>から</Label>
+						<TextBox Name="txtTo" Width="60" ToolTip="16進として解釈" HorizontalContentAlignment="Right"/>
+						<Label>の値を</Label>
+						<TextBox Name="txtSize" Width="30" HorizontalContentAlignment="Right">1</TextBox>
+						<Label>バイト区切りで</Label>
+						<Button Margin="3" Click="cmdDispData_Click">表示してみる</Button>
+					</StackPanel>
+					<StackPanel Orientation="Horizontal" DockPanel.Dock="Top">
+						<TextBox Name="txtLower" Width="60" ToolTip="10進として解釈" HorizontalContentAlignment="Right"/>
+						<Label>から</Label>
+						<TextBox Name="txtUpper" Width="60" ToolTip="10進として解釈" HorizontalContentAlignment="Right"/>
+						<Label>の範囲の値のみを</Label>
+						<Button Margin="3" Click="cmdFilter_Click">表示してみる</Button>
+					</StackPanel>
+					<StackPanel Orientation="Horizontal" DockPanel.Dock="Top">
+						<Label>名称</Label>
+						<Label>初期値</Label>
+						<Label>値</Label>
+					</StackPanel>
+					<ScrollViewer HorizontalScrollBarVisibility="Auto"
+					  VerticalScrollBarVisibility="Auto">
+						<ItemsControl Name="lstDebug">
+							<ItemsControl.ItemsPanel>
+								<ItemsPanelTemplate>
+									<!--<WrapPanel Orientation="Vertical" Height="400" HorizontalAlignment="Left"/>-->
+									<StackPanel Orientation="Vertical"></StackPanel>
+								</ItemsPanelTemplate>
+							</ItemsControl.ItemsPanel>
+							<ItemsControl.ItemTemplate>
+								<DataTemplate>
+									<StackPanel Orientation="Horizontal" Margin="1" Visibility="{Binding Visibility}">
+										<Label Content="{Binding Title}" Width="150"/>
+										<Label Content="{Binding Value0}" Width="80" HorizontalContentAlignment="Right"/>
+										<TextBox Text="{Binding Value,UpdateSourceTrigger=PropertyChanged}" Width="80" HorizontalContentAlignment="Right"/>
+									</StackPanel>
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+					</ScrollViewer>
+				</DockPanel>
+			</TabItem>
+		</TabControl>
 	</DockPanel>
 </Window>
 
