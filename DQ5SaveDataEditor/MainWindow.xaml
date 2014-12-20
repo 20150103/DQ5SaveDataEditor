@@ -22,76 +22,94 @@
 				<TextBox Width="50" Name="txtDeltaHex" HorizontalContentAlignment="Right"></TextBox>
 				<Button Click="cmdClear" Margin="3">変更を破棄</Button>
 			</StackPanel>
-			<StackPanel Orientation="Horizontal">
-				<Label Content="所持金"/>
-				<TextBox Name="txtMoney" IsReadOnly="True" Width="100" HorizontalContentAlignment="Right"/>
-				<Label Content="G"/>
-			</StackPanel>
 		</StackPanel>
 		<TabControl>
 			<TabItem Header="所持金、袋">
 				<DockPanel>
-				<StackPanel Orientation="Horizontal" DockPanel.Dock="Top">
-					<Label>名称</Label>
-					<Label>初期値</Label>
-					<Label>値</Label>
-					<Label>説明</Label>
-				</StackPanel>
-					<ScrollViewer HorizontalScrollBarVisibility="Auto"
-					  VerticalScrollBarVisibility="Auto">
-						<ItemsControl Name="lstData">
-							<ItemsControl.ItemsPanel>
-								<ItemsPanelTemplate>
-									<!--<WrapPanel Orientation="Vertical" Height="400" HorizontalAlignment="Left"/>-->
-									<StackPanel Orientation="Vertical"></StackPanel>
-								</ItemsPanelTemplate>
-							</ItemsControl.ItemsPanel>
-							<ItemsControl.ItemTemplate>
-								<DataTemplate>
-									<StackPanel Orientation="Horizontal" Margin="1">
-										<Label Content="{Binding Title}" Width="150"/>
-										<Label Content="{Binding Value0}" Width="80" HorizontalContentAlignment="Right"/>
-										<TextBox Text="{Binding Value,UpdateSourceTrigger=PropertyChanged}" Width="80" HorizontalContentAlignment="Right"/>
-										<Label Content="{Binding Text}" Width="200" HorizontalContentAlignment="Left"/>
-										<Button Visibility="{Binding DeleteButtonVisibility}"
+					<StackPanel Orientation="Horizontal" DockPanel.Dock="Top">
+						<Label Content="所持金"/>
+						<TextBox Name="txtMoney" IsReadOnly="True" Width="100" HorizontalContentAlignment="Right"/>
+						<Label Content="G"/>
+					</StackPanel>
+					<ListView Name="lstData">
+						<ListView.ItemContainerStyle>
+							<Style TargetType="ListViewItem">
+								<Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+							</Style>
+						</ListView.ItemContainerStyle>
+						<ListView.View>
+							<GridView>
+								<GridViewColumn Header="名称" Width="150">
+									<GridViewColumn.CellTemplate>
+										<DataTemplate>
+											<TextBlock Text="{Binding Title}" ToolTip="{Binding PosHex}"/>
+										</DataTemplate>
+									</GridViewColumn.CellTemplate>
+								</GridViewColumn>
+								<GridViewColumn Header="初期値" Width="80">
+									<GridViewColumn.CellTemplate>
+										<DataTemplate>
+											<TextBlock Text="{Binding Value0}" TextAlignment="Right"/>
+										</DataTemplate>
+									</GridViewColumn.CellTemplate>
+								</GridViewColumn>
+								<GridViewColumn Header="値" Width="80">
+									<GridViewColumn.CellTemplate>
+										<DataTemplate>
+											<TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right"/>
+										</DataTemplate>
+									</GridViewColumn.CellTemplate>
+								</GridViewColumn>
+								<GridViewColumn Header="説明" DisplayMemberBinding="{Binding Text}" Width="200"/>
+								<GridViewColumn Header="削除">
+									<GridViewColumn.CellTemplate>
+										<DataTemplate>
+											<Button Visibility="{Binding DeleteButtonVisibility}"
 												ToolTip="このアイテムを削除して以降のアイテムをずらします"
 												Content="削除"
 												Click="cmdDeleteItem_Click" Tag="{Binding Pos}"/>
-									</StackPanel>
-								</DataTemplate>
-							</ItemsControl.ItemTemplate>
-						</ItemsControl>
-					</ScrollViewer>
+										</DataTemplate>
+									</GridViewColumn.CellTemplate>
+								</GridViewColumn>
+							</GridView>
+						</ListView.View>
+					</ListView>
 				</DockPanel>
 			</TabItem>
 			<TabItem Header="モンスター預かり所(暫定)">
 				<DockPanel>
-					<StackPanel Orientation="Horizontal" DockPanel.Dock="Top">
-						<Label>名称</Label>
-						<Label>初期値</Label>
-						<Label>値</Label>
-					</StackPanel>
-					<ScrollViewer HorizontalScrollBarVisibility="Auto"
-					  VerticalScrollBarVisibility="Auto">
-						<ItemsControl Name="lstMonsters">
-							<ItemsControl.ItemsPanel>
-								<ItemsPanelTemplate>
-									<!--<WrapPanel Orientation="Vertical" Height="400" HorizontalAlignment="Left"/>-->
-									<StackPanel Orientation="Vertical"></StackPanel>
-								</ItemsPanelTemplate>
-							</ItemsControl.ItemsPanel>
-							<ItemsControl.ItemTemplate>
-								<DataTemplate>
-									<StackPanel Orientation="Horizontal" Margin="1">
-										<Label Content="{Binding Title}" Width="150"/>
-										<Label Content="{Binding Value0}" Width="80" HorizontalContentAlignment="Right"/>
-										<TextBox Text="{Binding Value,UpdateSourceTrigger=PropertyChanged}" Width="80" HorizontalContentAlignment="Right"/>
-										<Label Content="{Binding Text}" Width="200" HorizontalContentAlignment="Left"/>
-									</StackPanel>
-								</DataTemplate>
-							</ItemsControl.ItemTemplate>
-						</ItemsControl>
-					</ScrollViewer>
+					<ListView Name="lstMonsters">
+						<ListView.ItemContainerStyle>
+							<Style TargetType="ListViewItem">
+								<Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+							</Style>
+						</ListView.ItemContainerStyle>
+						<ListView.View>
+							<GridView>
+								<GridViewColumn Header="名称" Width="150">
+									<GridViewColumn.CellTemplate>
+										<DataTemplate>
+											<TextBlock Text="{Binding Title}" ToolTip="{Binding PosHex}"/>
+										</DataTemplate>
+									</GridViewColumn.CellTemplate>
+								</GridViewColumn>
+								<GridViewColumn Header="初期値" Width="80">
+									<GridViewColumn.CellTemplate>
+										<DataTemplate>
+											<TextBlock Text="{Binding Value0}" TextAlignment="Right"/>
+										</DataTemplate>
+									</GridViewColumn.CellTemplate>
+								</GridViewColumn>
+								<GridViewColumn Header="値" Width="80">
+									<GridViewColumn.CellTemplate>
+										<DataTemplate>
+											<TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right"/>
+										</DataTemplate>
+									</GridViewColumn.CellTemplate>
+								</GridViewColumn>
+							</GridView>
+						</ListView.View>
+					</ListView>
 				</DockPanel>
 			</TabItem>
 			<TabItem Header="解析用">
@@ -112,31 +130,38 @@
 						<Label>の範囲の値のみを</Label>
 						<Button Margin="3" Click="cmdFilter_Click">表示してみる</Button>
 					</StackPanel>
-					<StackPanel Orientation="Horizontal" DockPanel.Dock="Top">
-						<Label>名称</Label>
-						<Label>初期値</Label>
-						<Label>値</Label>
-					</StackPanel>
-					<ScrollViewer HorizontalScrollBarVisibility="Auto"
-					  VerticalScrollBarVisibility="Auto">
-						<ItemsControl Name="lstDebug">
-							<ItemsControl.ItemsPanel>
-								<ItemsPanelTemplate>
-									<!--<WrapPanel Orientation="Vertical" Height="400" HorizontalAlignment="Left"/>-->
-									<StackPanel Orientation="Vertical"></StackPanel>
-								</ItemsPanelTemplate>
-							</ItemsControl.ItemsPanel>
-							<ItemsControl.ItemTemplate>
-								<DataTemplate>
-									<StackPanel Orientation="Horizontal" Margin="1" Visibility="{Binding Visibility}">
-										<Label Content="{Binding Title}" Width="150"/>
-										<Label Content="{Binding Value0}" Width="80" HorizontalContentAlignment="Right"/>
-										<TextBox Text="{Binding Value,UpdateSourceTrigger=PropertyChanged}" Width="80" HorizontalContentAlignment="Right"/>
-									</StackPanel>
-								</DataTemplate>
-							</ItemsControl.ItemTemplate>
-						</ItemsControl>
-					</ScrollViewer>
+					<ListView Name="lstDebug">
+						<ListView.ItemContainerStyle>
+							<Style TargetType="ListViewItem">
+								<Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+							</Style>
+						</ListView.ItemContainerStyle>
+						<ListView.View>
+							<GridView>
+								<GridViewColumn Header="名称" Width="150">
+									<GridViewColumn.CellTemplate>
+										<DataTemplate>
+											<TextBlock Text="{Binding Title}" ToolTip="{Binding PosHex}"/>
+										</DataTemplate>
+									</GridViewColumn.CellTemplate>
+								</GridViewColumn>
+								<GridViewColumn Header="初期値" Width="80">
+									<GridViewColumn.CellTemplate>
+										<DataTemplate>
+											<TextBlock Text="{Binding Value0}" TextAlignment="Right"/>
+										</DataTemplate>
+									</GridViewColumn.CellTemplate>
+								</GridViewColumn>
+								<GridViewColumn Header="値" Width="80">
+									<GridViewColumn.CellTemplate>
+										<DataTemplate>
+											<TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right"/>
+										</DataTemplate>
+									</GridViewColumn.CellTemplate>
+								</GridViewColumn>
+							</GridView>
+						</ListView.View>
+					</ListView>
 				</DockPanel>
 			</TabItem>
 		</TabControl>

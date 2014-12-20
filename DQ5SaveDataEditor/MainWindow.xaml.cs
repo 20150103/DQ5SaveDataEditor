@@ -98,6 +98,8 @@ namespace DQ5SaveDataEditor
 			/// </summary>
 			public int Pos { get; set; }
 
+			public string PosHex { get { return this.Pos.ToString("X4"); } }
+
 			/// <summary>
 			/// XORキー
 			/// </summary>
@@ -365,7 +367,7 @@ namespace DQ5SaveDataEditor
 			for (var i = 0; i < MONEY_SIZE; i++)
 			{
 				item = new CData();
-				item.Title = "所持金iバイト目".FormatEx(i);
+				item.Title = "所持金{0}バイト目".FormatEx(i);
 				item.Pos = POS_MONEY + i * item.Size;
 
 				Items.Add(item);
