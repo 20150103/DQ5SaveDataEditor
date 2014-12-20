@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using Microsoft.Win32;
 
 namespace DQ5SaveDataEditor
@@ -225,11 +226,6 @@ namespace DQ5SaveDataEditor
 			/// </summary>
 			public static Action<long> updateDiff;
 
-			/// <summary>
-			/// 文字列変換
-			/// </summary>
-			public static Func<CData, string> getString;
-
 			public CData()
 			{
 				this.Size = 1;
@@ -266,6 +262,27 @@ namespace DQ5SaveDataEditor
 			}
 
 			#endregion
+		}
+
+		/// <summary>
+		/// 表示用
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		class Item<T>
+		{
+			public T Value;
+			public string Text;
+
+			public Item(T val, string txt)
+			{
+				this.Value = val;
+				this.Text = txt;
+			}
+
+			public override string ToString()
+			{
+				return this.Text;
+			}
 		}
 
 		#endregion
@@ -403,6 +420,11 @@ namespace DQ5SaveDataEditor
 		/// 編集対象データ(モンスター)
 		/// </summary>
 		static ObservableCollection<CData> Monsters;
+
+		/// <summary>
+		/// モンスター一覧スクロール用のコンボボックスのデータソース
+		/// </summary>
+		static List<Item<CData>> monsters;
 
 		/// <summary>
 		/// 袋アイテムの種類(番号順)
@@ -564,11 +586,83 @@ namespace DQ5SaveDataEditor
 			#region 仲間、モンスターを初期化
 
 			Monsters = new ObservableCollection<CData>();
+			monsters = new List<Item<CData>>();
+
 			for (var i = 0; i < MONSTER_SIZE; i++)
 			{
 				var pos_head = POS_MONSTER_S + i * MONSTER_DATA_SIZE;
 
-				// アドレス順に追加するほうが解析しやすい
+				// アドレス順に追加するほうが解析しやすいが
+				// もう解析しないだろうからみやすい順に並べる
+
+				item = new CData();
+				item.Title = "{0:D3}の名前1".FormatEx(i + 1);
+				item.Size = 3;
+				item.Pos = pos_head + OFFSET_M_NAME1;
+				item.IsString = true;
+
+				Monsters.Add(item);
+				allItems.Add(item);
+				monsters.Add(new Item<CData>(item, "{0:D3}".FormatEx(i + 1)));
+
+				item = new CData();
+				item.Title = "{0:D3}の名前2".FormatEx(i + 1);
+				item.Size = 3;
+				item.Pos = pos_head + OFFSET_M_NAME2;
+				item.IsString = true;
+
+				Monsters.Add(item);
+				allItems.Add(item);
+
+				item = new CData();
+				item.Title = "{0:D3}の名前3".FormatEx(i + 1);
+				item.Size = 3;
+				item.Pos = pos_head + OFFSET_M_NAME3;
+				item.IsString = true;
+
+				Monsters.Add(item);
+				allItems.Add(item);
+
+				item = new CData();
+				item.Title = "{0:D3}の名前4".FormatEx(i + 1);
+				item.Size = 3;
+				item.Pos = pos_head + OFFSET_M_NAME4;
+				item.IsString = true;
+
+				Monsters.Add(item);
+				allItems.Add(item);
+
+				item = new CData();
+				item.Title = "{0:D3}の種別?".FormatEx(i + 1);
+				item.Size = 1;
+				item.Pos = pos_head + OFFSET_M_TYPE;
+
+				Monsters.Add(item);
+				allItems.Add(item);
+
+				item = new CData();
+				item.Title = "{0:D3}の表示?".FormatEx(i + 1);
+				item.Size = 1;
+				item.Pos = pos_head + OFFSET_M_FACE;
+
+				Monsters.Add(item);
+				allItems.Add(item);
+
+				item = new CData();
+				item.Title = "{0:D3}の状態?".FormatEx(i + 1);
+				item.Size = 1;
+				item.Pos = pos_head + OFFSET_M_RACE;
+
+				Monsters.Add(item);
+				allItems.Add(item);
+
+				item = new CData();
+				item.Title = "{0:D3}のレベル".FormatEx(i + 1);
+				item.Size = 1;
+				item.Pos = pos_head + OFFSET_M_LV;
+
+				Monsters.Add(item);
+				allItems.Add(item);
 
 				item = new CData();
 				item.Title = "{0:D3}の経験値".FormatEx(i + 1);
@@ -606,66 +700,6 @@ namespace DQ5SaveDataEditor
 				item.Title = "{0:D3}の最大MP".FormatEx(i + 1);
 				item.Size = 2;
 				item.Pos = pos_head + OFFSET_M_MAX_MP;
-
-				Monsters.Add(item);
-				allItems.Add(item);
-
-				item = new CData();
-				item.Title = "{0:D3}の種別?".FormatEx(i + 1);
-				item.Size = 1;
-				item.Pos = pos_head + OFFSET_M_TYPE;
-
-				Monsters.Add(item);
-				allItems.Add(item);
-
-				item = new CData();
-				item.Title = "{0:D3}の種族?".FormatEx(i + 1);
-				item.Size = 1;
-				item.Pos = pos_head + OFFSET_M_RACE;
-
-				Monsters.Add(item);
-				allItems.Add(item);
-
-				item = new CData();
-				item.Title = "{0:D3}の画像?".FormatEx(i + 1);
-				item.Size = 1;
-				item.Pos = pos_head + OFFSET_M_FACE;
-
-				Monsters.Add(item);
-				allItems.Add(item);
-
-				item = new CData();
-				item.Title = "{0:D3}の名前1?".FormatEx(i + 1);
-				item.Size = 3;
-				item.Pos = pos_head + OFFSET_M_NAME1;
-				item.IsString = true;
-
-				Monsters.Add(item);
-				allItems.Add(item);
-
-				item = new CData();
-				item.Title = "{0:D3}の名前2?".FormatEx(i + 1);
-				item.Size = 3;
-				item.Pos = pos_head + OFFSET_M_NAME2;
-				item.IsString = true;
-
-				Monsters.Add(item);
-				allItems.Add(item);
-
-				item = new CData();
-				item.Title = "{0:D3}の名前3?".FormatEx(i + 1);
-				item.Size = 3;
-				item.Pos = pos_head + OFFSET_M_NAME3;
-				item.IsString = true;
-
-				Monsters.Add(item);
-				allItems.Add(item);
-
-				item = new CData();
-				item.Title = "{0:D3}の名前4?".FormatEx(i + 1);
-				item.Size = 3;
-				item.Pos = pos_head + OFFSET_M_NAME4;
-				item.IsString = true;
 
 				Monsters.Add(item);
 				allItems.Add(item);
@@ -709,14 +743,6 @@ namespace DQ5SaveDataEditor
 
 				Monsters.Add(item);
 				allItems.Add(item);
-
-				item = new CData();
-				item.Title = "{0:D3}のレベル".FormatEx(i + 1);
-				item.Size = 1;
-				item.Pos = pos_head + OFFSET_M_LV;
-
-				Monsters.Add(item);
-				allItems.Add(item);
 			}
 
 			#endregion
@@ -728,6 +754,7 @@ namespace DQ5SaveDataEditor
 
 			this.lstData.ItemsSource = Items;			// 所持金、袋アイテム
 			this.lstMonsters.ItemsSource = Monsters;	// 仲間、モンスター
+			this.cmbMonsters.ItemsSource = monsters;
 
 			// 所持金更新用
 			if (CData.updateMoney == null)
@@ -947,6 +974,21 @@ namespace DQ5SaveDataEditor
 						}
 					}
 				}
+			}
+		}
+
+		/// <summary>
+		/// モンスター一覧を選択した
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		void cmbMonsters_SelectionChanged(object sender, SelectionChangedEventArgs e)
+		{
+			var idx = this.cmbMonsters.SelectedIndex;
+			if (idx >= 0)
+			{
+				this.lstMonsters.ScrollIntoView(Monsters.Last());
+				this.lstMonsters.ScrollIntoView(monsters[idx].Value);
 			}
 		}
 
