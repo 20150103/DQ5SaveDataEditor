@@ -31,10 +31,15 @@
 						<TextBox Name="txtMoney" IsReadOnly="True" Width="100" HorizontalContentAlignment="Right"/>
 						<Label Content="G"/>
 					</StackPanel>
-					<ListView Name="lstData">
+					<ListView Name="lstData" AlternationCount="2">
 						<ListView.ItemContainerStyle>
 							<Style TargetType="ListViewItem">
 								<Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+								<Style.Triggers>
+									<Trigger Property="ListBox.AlternationIndex" Value="0">
+										<Setter Property="Background" Value="AliceBlue"/>
+									</Trigger>
+								</Style.Triggers>
 							</Style>
 						</ListView.ItemContainerStyle>
 						<ListView.View>
@@ -78,10 +83,15 @@
 			</TabItem>
 			<TabItem Header="仲間、モンスター">
 				<DockPanel>
-					<ListView Name="lstMonsters">
+					<ListView Name="lstMonsters" AlternationCount="2">
 						<ListView.ItemContainerStyle>
 							<Style TargetType="ListViewItem">
 								<Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+								<Style.Triggers>
+									<Trigger Property="ListBox.AlternationIndex" Value="0">
+										<Setter Property="Background" Value="AliceBlue"/>
+									</Trigger>
+								</Style.Triggers>
 							</Style>
 						</ListView.ItemContainerStyle>
 						<ListView.View>
@@ -130,11 +140,16 @@
 						<Label>の範囲の値のみを</Label>
 						<Button Margin="3" Click="cmdFilter_Click">表示してみる</Button>
 					</StackPanel>
-					<ListView Name="lstDebug">
+					<ListView Name="lstDebug" AlternationCount="2">
 						<ListView.ItemContainerStyle>
 							<Style TargetType="ListViewItem">
 								<Setter Property="HorizontalContentAlignment" Value="Stretch"/>
 								<Setter Property="Visibility" Value="{Binding Visibility}"/>
+								<Style.Triggers>
+										<Trigger Property="ListBox.AlternationIndex" Value="0">
+											<Setter Property="Background" Value="AliceBlue"/>
+										</Trigger>
+								</Style.Triggers>
 							</Style>
 						</ListView.ItemContainerStyle>
 						<ListView.View>
@@ -160,6 +175,7 @@
 										</DataTemplate>
 									</GridViewColumn.CellTemplate>
 								</GridViewColumn>
+								<GridViewColumn Header="確定" DisplayMemberBinding="{Binding Text}" Width="150"/>
 							</GridView>
 						</ListView.View>
 					</ListView>

@@ -48,15 +48,16 @@ namespace DQ5SaveDataEditor
 				get { return val; }
 				set
 				{
-					val = value;
+					var prev = this.val;
+					this.val = value;
 
 					// 袋のアイテム種類を変更したらアイテム名も更新
 					if (this.isFukuroItem)
 					{
-						if (val == 0)
+						if (this.val == 0)
 							this.Text = "未使用";
-						else if (ItemCodes.ContainsKey(val))
-							this.Text = ItemCodes[val];
+						else if (ItemCodes.ContainsKey(this.val))
+							this.Text = ItemCodes[this.val];
 						else
 							this.Text = string.Empty;
 						this.OnPropertyChanged("Text");
@@ -67,8 +68,15 @@ namespace DQ5SaveDataEditor
 					}
 
 					// 差分を更新
-					Diff += this.CalcDiff();
-					updateDiff(Diff);
+					if (NeedToCalcDiff)
+					{
+						var diff = this.CalcDiff(prev, this.val);
+						if (diff != 0)
+						{
+							Diff += diff;
+							updateDiff(Diff);
+						}
+					}
 
 					this.OnPropertyChanged("Value");
 				}
@@ -119,6 +127,12 @@ namespace DQ5SaveDataEditor
 
 			public static long Diff;
 
+			/// <summary>
+			/// 差分計算を実施するか否か
+			/// 初期化時は不要
+			/// </summary>
+			public static bool NeedToCalcDiff = true;
+
 			#endregion
 
 			public event PropertyChangedEventHandler PropertyChanged;
@@ -154,11 +168,11 @@ namespace DQ5SaveDataEditor
 				return "{0} {1:X2} {2:X2}".FormatEx(this.Title, this.Value0, this.Value);
 			}
 
-			public long CalcDiff()
+			public long CalcDiff(uint prev, uint next)
 			{
 				long diff = 0;
-				var bytes0 = BitConverter.GetBytes(this.Value0);
-				var bytes = BitConverter.GetBytes(this.Value);
+				var bytes0 = BitConverter.GetBytes(prev);
+				var bytes = BitConverter.GetBytes(next);
 				for (var i = 0; i < this.Size; i++)
 				{
 					diff += bytes[i];
@@ -224,8 +238,8 @@ namespace DQ5SaveDataEditor
 		/// <summary>
 		/// モンスターの先頭アドレス(人間含む)
 		/// </summary>
-		const int POS_MONSTER_S = 0x0454; // 主人公？
-		//const int POS_MONSTER_S = 0x0894; キラーパンサー
+		const int POS_MONSTER_S = 0x0450; // 主人公？
+		//const int POS_MONSTER_S = 0x0890; キラーパンサー
 
 		/// <summary>
 		/// 編集可能な仲間数(モンスター含む)
@@ -237,16 +251,24 @@ namespace DQ5SaveDataEditor
 		/// </summary>
 		const int MONSTER_DATA_SIZE = 68;
 
-		const int OFFSET_M_CUR_HP = 0;
+		const int OFFSET_M_EXP = 0;						// 経験値
+
+		const int OFFSET_M_CUR_HP = 4;					// 現在HP、以降ここからのオフセット
 		const int OFFSET_M_MAX_HP = OFFSET_M_CUR_HP + 2;
 		const int OFFSET_M_CUR_MP = OFFSET_M_CUR_HP + 4;
 		const int OFFSET_M_MAX_MP = OFFSET_M_CUR_HP + 6;
 
-		const int OFFSET_M_STR = OFFSET_M_CUR_HP + 56; // ちから
-		const int OFFSET_M_DEF = OFFSET_M_CUR_HP + 57; // みのまもり
-		const int OFFSET_M_AGI = OFFSET_M_CUR_HP + 58; // すばやさ
-		const int OFFSET_M_WIT = OFFSET_M_CUR_HP + 59; // かしこさ
-		const int OFFSET_M_LUC = OFFSET_M_CUR_HP + 60; // うんのよさ
+		const int OFFSET_M_TYPE = OFFSET_M_CUR_HP + 8;	// 種別?
+		const int OFFSET_M_RACE = OFFSET_M_CUR_HP + 34;	// 人間?(0=人間、1=モンスター?)
+		const int OFFSET_M_FACE = OFFSET_M_CUR_HP + 35;	// 画像?
+
+		const int OFFSET_M_STR = OFFSET_M_CUR_HP + 56;	// ちから
+		const int OFFSET_M_DEF = OFFSET_M_CUR_HP + 57;	// みのまもり
+		const int OFFSET_M_AGI = OFFSET_M_CUR_HP + 58;	// すばやさ
+		const int OFFSET_M_WIT = OFFSET_M_CUR_HP + 59;	// かしこさ
+		const int OFFSET_M_LUC = OFFSET_M_CUR_HP + 60;	// うんのよさ
+
+		const int OFFSET_M_LV = OFFSET_M_EXP + MONSTER_DATA_SIZE - 3;	// レベル
 
 		#endregion
 
@@ -401,15 +423,25 @@ namespace DQ5SaveDataEditor
 
 			#endregion
 
-			#region 預かり所モンスターを初期化
+			#region 仲間、モンスターを初期化
 
 			Monsters = new ObservableCollection<CData>();
 			for (var i = 0; i < MONSTER_SIZE; i++)
 			{
 				var pos_head = POS_MONSTER_S + i * MONSTER_DATA_SIZE;
 
+				// アドレス順に追加するほうが解析しやすい
+
 				item = new CData();
-				item.Title = "モンスター{0:D3}の現在HP".FormatEx(i + 1);
+				item.Title = "{0:D3}の経験値".FormatEx(i + 1);
+				item.Size = 4;
+				item.Pos = pos_head + OFFSET_M_EXP;
+
+				Monsters.Add(item);
+				allItems.Add(item);
+
+				item = new CData();
+				item.Title = "{0:D3}の現在HP".FormatEx(i + 1);
 				item.Size = 2;
 				item.Pos = pos_head + OFFSET_M_CUR_HP;
 
@@ -417,7 +449,7 @@ namespace DQ5SaveDataEditor
 				allItems.Add(item);
 
 				item = new CData();
-				item.Title = "モンスター{0:D3}の最大HP".FormatEx(i + 1);
+				item.Title = "{0:D3}の最大HP".FormatEx(i + 1);
 				item.Size = 2;
 				item.Pos = pos_head + OFFSET_M_MAX_HP;
 
@@ -425,7 +457,7 @@ namespace DQ5SaveDataEditor
 				allItems.Add(item);
 
 				item = new CData();
-				item.Title = "モンスター{0:D3}の現在MP".FormatEx(i + 1);
+				item.Title = "{0:D3}の現在MP".FormatEx(i + 1);
 				item.Size = 2;
 				item.Pos = pos_head + OFFSET_M_CUR_MP;
 
@@ -433,7 +465,7 @@ namespace DQ5SaveDataEditor
 				allItems.Add(item);
 
 				item = new CData();
-				item.Title = "モンスター{0:D3}の最大MP".FormatEx(i + 1);
+				item.Title = "{0:D3}の最大MP".FormatEx(i + 1);
 				item.Size = 2;
 				item.Pos = pos_head + OFFSET_M_MAX_MP;
 
@@ -441,7 +473,31 @@ namespace DQ5SaveDataEditor
 				allItems.Add(item);
 
 				item = new CData();
-				item.Title = "モンスター{0:D3}のちから".FormatEx(i + 1);
+				item.Title = "{0:D3}の種別?".FormatEx(i + 1);
+				item.Size = 1;
+				item.Pos = pos_head + OFFSET_M_TYPE;
+
+				Monsters.Add(item);
+				allItems.Add(item);
+
+				item = new CData();
+				item.Title = "{0:D3}の種族?".FormatEx(i + 1);
+				item.Size = 1;
+				item.Pos = pos_head + OFFSET_M_RACE;
+
+				Monsters.Add(item);
+				allItems.Add(item);
+
+				item = new CData();
+				item.Title = "{0:D3}の画像?".FormatEx(i + 1);
+				item.Size = 1;
+				item.Pos = pos_head + OFFSET_M_FACE;
+
+				Monsters.Add(item);
+				allItems.Add(item);
+
+				item = new CData();
+				item.Title = "{0:D3}のちから".FormatEx(i + 1);
 				item.Size = 1;
 				item.Pos = pos_head + OFFSET_M_STR;
 
@@ -449,7 +505,7 @@ namespace DQ5SaveDataEditor
 				allItems.Add(item);
 
 				item = new CData();
-				item.Title = "モンスター{0:D3}のみのまもり".FormatEx(i + 1);
+				item.Title = "{0:D3}のみのまもり".FormatEx(i + 1);
 				item.Size = 1;
 				item.Pos = pos_head + OFFSET_M_DEF;
 
@@ -457,7 +513,7 @@ namespace DQ5SaveDataEditor
 				allItems.Add(item);
 
 				item = new CData();
-				item.Title = "モンスター{0:D3}のすばやさ".FormatEx(i + 1);
+				item.Title = "{0:D3}のすばやさ".FormatEx(i + 1);
 				item.Size = 1;
 				item.Pos = pos_head + OFFSET_M_AGI;
 
@@ -465,7 +521,7 @@ namespace DQ5SaveDataEditor
 				allItems.Add(item);
 
 				item = new CData();
-				item.Title = "モンスター{0:D3}のかしこさ".FormatEx(i + 1);
+				item.Title = "{0:D3}のかしこさ".FormatEx(i + 1);
 				item.Size = 1;
 				item.Pos = pos_head + OFFSET_M_WIT;
 
@@ -473,9 +529,17 @@ namespace DQ5SaveDataEditor
 				allItems.Add(item);
 
 				item = new CData();
-				item.Title = "モンスター{0:D3}のうんのよさ".FormatEx(i + 1);
+				item.Title = "{0:D3}のうんのよさ".FormatEx(i + 1);
 				item.Size = 1;
 				item.Pos = pos_head + OFFSET_M_LUC;
+
+				Monsters.Add(item);
+				allItems.Add(item);
+
+				item = new CData();
+				item.Title = "{0:D3}のレベル".FormatEx(i + 1);
+				item.Size = 1;
+				item.Pos = pos_head + OFFSET_M_LV;
 
 				Monsters.Add(item);
 				allItems.Add(item);
@@ -489,7 +553,7 @@ namespace DQ5SaveDataEditor
 			InitializeComponent();
 
 			this.lstData.ItemsSource = Items;			// 所持金、袋アイテム
-			this.lstMonsters.ItemsSource = Monsters;	// 預かり所モンスター
+			this.lstMonsters.ItemsSource = Monsters;	// 仲間、モンスター
 
 			// 所持金更新用
 			if (CData.updateMoney == null)
@@ -669,6 +733,7 @@ namespace DQ5SaveDataEditor
 			if (from >= 0 && to >= 0 && size >= 0)
 			{
 				var items = new ObservableCollection<CData>();
+				CData.NeedToCalcDiff = false;
 
 				var pos = from;
 				while (pos <= to)
@@ -701,7 +766,17 @@ namespace DQ5SaveDataEditor
 					item.Value = item.Value0;
 					item.OnPropertyChanged("Value0");
 					item.OnPropertyChanged("Value");
+
+					// 既に判明しているアドレスならば情報を付与
+					var idx = allItems.FindIndex(ai => ai.Pos == item.Pos);
+					if (idx != -1)
+					{
+						item.Text = allItems[idx].Title;
+						item.OnPropertyChanged("Text");
+					}
 				}
+
+				CData.NeedToCalcDiff = true;
 				this.lstDebug.ItemsSource = items;
 			}
 		}
@@ -775,11 +850,13 @@ namespace DQ5SaveDataEditor
 			this.txtMoney.Text = string.Empty;
 
 			// データ
+			CData.NeedToCalcDiff = false;
 			foreach (var item in allItems)
 			{
 				item.Value = item.Value0;
 				item.OnPropertyChanged("Value");
 			}
+			CData.NeedToCalcDiff = true;
 
 			// 差分
 			CData.Diff = 0;
@@ -811,7 +888,7 @@ namespace DQ5SaveDataEditor
 			long diff = 0;
 			foreach (var item in allItems)
 			{
-				diff += item.CalcDiff();
+				diff += item.CalcDiff(item.Value0, item.Value);
 			}
 
 			return diff;
