@@ -222,19 +222,20 @@ namespace DQ5SaveDataEditor
 		const int POS_FUKURO_COUNT_S = 0x0258;
 
 		/// <summary>
-		/// モンスターの先頭アドレス(暫定)
+		/// モンスターの先頭アドレス(人間含む)
 		/// </summary>
-		const int POS_MONSTER_S = 0x0894;
+		const int POS_MONSTER_S = 0x0454; // 主人公？
+		//const int POS_MONSTER_S = 0x0894; キラーパンサー
 
 		/// <summary>
-		/// 編集可能なモンスター数
+		/// 編集可能な仲間数(モンスター含む)
 		/// </summary>
-		const int MONSTER_SIZE = 20;
+		const int MONSTER_SIZE = 100;
 
 		/// <summary>
 		/// モンスター1匹分のデータサイズ
 		/// </summary>
-		const int MONSTER_DATA_SIZE = 204;
+		const int MONSTER_DATA_SIZE = 68;
 
 		const int OFFSET_M_CUR_HP = 0;
 		const int OFFSET_M_MAX_HP = OFFSET_M_CUR_HP + 2;

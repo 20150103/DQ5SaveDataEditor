@@ -76,7 +76,7 @@
 					</ListView>
 				</DockPanel>
 			</TabItem>
-			<TabItem Header="モンスター預かり所(暫定)">
+			<TabItem Header="仲間、モンスター">
 				<DockPanel>
 					<ListView Name="lstMonsters">
 						<ListView.ItemContainerStyle>
