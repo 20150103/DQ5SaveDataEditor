@@ -134,6 +134,7 @@
 						<ListView.ItemContainerStyle>
 							<Style TargetType="ListViewItem">
 								<Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+								<Setter Property="Visibility" Value="{Binding Visibility}"/>
 							</Style>
 						</ListView.ItemContainerStyle>
 						<ListView.View>
