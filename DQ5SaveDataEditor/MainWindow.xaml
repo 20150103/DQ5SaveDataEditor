@@ -117,6 +117,7 @@
 										</DataTemplate>
 									</GridViewColumn.CellTemplate>
 								</GridViewColumn>
+								<GridViewColumn Header="説明" Width="120" DisplayMemberBinding="{Binding Text}"/>
 							</GridView>
 						</ListView.View>
 					</ListView>

@@ -74,6 +74,9 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Monsters.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Keys.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

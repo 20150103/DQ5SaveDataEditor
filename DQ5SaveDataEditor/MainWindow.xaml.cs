@@ -66,6 +66,14 @@ namespace DQ5SaveDataEditor
 					{
 						updateMoney();
 					}
+					else if (this.isMonster)
+					{
+						if (MonsterCodes.ContainsKey(this.val))
+							this.Text = MonsterCodes[this.val];
+						else
+							this.Text = string.Empty;
+						this.OnPropertyChanged("Text");
+					}
 
 					// 差分を更新
 					if (NeedToCalcDiff)
@@ -119,6 +127,22 @@ namespace DQ5SaveDataEditor
 			/// 袋のアイテムか否か
 			/// </summary>
 			public bool isFukuroItem { get { return this.Pos >= POS_FUKURO_TYPE_S && this.Pos <= POS_FUKURO_TYPE_S + FUKURO_SIZE * FUKURO_TYPE_SIZE; } }
+
+			/// <summary>
+			/// モンスター種別名を表示するか否か
+			/// </summary>
+			public bool isMonster
+			{
+				get
+				{
+					if (this.Pos >= POS_MONSTER_S && this.Pos <= POS_MONSTER_S + MONSTER_SIZE * MONSTER_DATA_SIZE)
+					{
+						var mod = (this.Pos - POS_MONSTER_S) % MONSTER_DATA_SIZE;
+						return mod == OFFSET_M_TYPE || mod == OFFSET_M_FACE;
+					}
+					return false;
+				}
+			}
 
 			/// <summary>
 			/// アイテムを表示するか否か
@@ -193,6 +217,12 @@ namespace DQ5SaveDataEditor
 		/// フォーマット：コード(10進)、タブ、名称
 		/// </summary>
 		const string FILE_ITEM_CODES = "ItemCodes.txt";
+
+		/// <summary>
+		/// モンスターコードファイル名
+		/// フォーマット：コード(10進)、タブ、名称
+		/// </summary>
+		const string FILE_MONSTER_CODES = "Monsters.txt";
 
 		/// <summary>
 		/// XORキーファイル
@@ -285,6 +315,11 @@ namespace DQ5SaveDataEditor
 		static Dictionary<uint, string> ItemCodes;
 
 		/// <summary>
+		/// モンスターコード表
+		/// </summary>
+		static Dictionary<uint, string> MonsterCodes;
+
+		/// <summary>
 		/// XORキー
 		/// </summary>
 		static Dictionary<int, byte> Keys;
@@ -322,6 +357,7 @@ namespace DQ5SaveDataEditor
 		{
 			allItems = new List<CData>();
 			ItemCodes = new Dictionary<uint, string>();
+			MonsterCodes = new Dictionary<uint, string>();
 			Keys = new Dictionary<int, byte>();
 
 			#region アイテムコード一覧を読み取る
@@ -335,7 +371,7 @@ namespace DQ5SaveDataEditor
 					{
 						var line = sr.ReadLine();
 						var values = line.Split('\t');
-						if (values.Length == 2)
+						if (values.Length == 2 && !string.IsNullOrEmpty(values[0]))
 						{
 							try
 							{
@@ -343,6 +379,34 @@ namespace DQ5SaveDataEditor
 								var name = values[1];
 								if (!ItemCodes.ContainsKey(val))
 									ItemCodes.Add(val, name);
+							}
+							catch { }
+						}
+					}
+				}
+			}
+
+			#endregion
+
+			#region モンスターコード一覧を読み取る
+
+			file = Path.Combine(Environment.CurrentDirectory, FILE_MONSTER_CODES);
+			if (File.Exists(file))
+			{
+				using (var sr = new StreamReader(file))
+				{
+					while (sr.Peek() > -1)
+					{
+						var line = sr.ReadLine();
+						var values = line.Split('\t');
+						if (values.Length >= 2 && !string.IsNullOrEmpty(values[0]))
+						{
+							try
+							{
+								var val = Convert.ToUInt32(values[0]);
+								var name = values[1];
+								if (!MonsterCodes.ContainsKey(val))
+									MonsterCodes.Add(val, name);
 							}
 							catch { }
 						}
@@ -363,7 +427,7 @@ namespace DQ5SaveDataEditor
 					{
 						var line = sr.ReadLine();
 						var values = line.Split('\t');
-						if (values.Length > 1)
+						if (values.Length > 1 && !string.IsNullOrEmpty(values[0]))
 						{
 							try
 							{
@@ -896,6 +960,7 @@ namespace DQ5SaveDataEditor
 
 		int ToInt(string str, int fromBase = 10)
 		{
+			if (string.IsNullOrEmpty(str)) return -1;
 			try
 			{
 				return Convert.ToInt32(str, fromBase);
