@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
@@ -60,7 +61,6 @@ namespace DQ5SaveDataEditor
 							this.Text = ItemCodes[this.val];
 						else
 							this.Text = string.Empty;
-						this.OnPropertyChanged("Text");
 					}
 					else if (this.Pos >= POS_MONEY && this.Pos <= POS_MONEY + MONEY_SIZE)
 					{
@@ -72,7 +72,15 @@ namespace DQ5SaveDataEditor
 							this.Text = MonsterCodes[this.val];
 						else
 							this.Text = string.Empty;
-						this.OnPropertyChanged("Text");
+					}
+					else if (this.IsString)
+					{
+						// 文字列に変換
+						var bytes = BitConverter.GetBytes(this.Value);
+						if (bytes[0] == 0 || bytes[0] == 0xD5) // よくわからん
+							this.Text = string.Empty;
+						else
+							this.Text = Encoding.UTF8.GetString(bytes, 0, this.size);
 					}
 
 					// 差分を更新
@@ -86,7 +94,24 @@ namespace DQ5SaveDataEditor
 						}
 					}
 
+					this.OnPropertyChanged("Text");
 					this.OnPropertyChanged("Value");
+				}
+			}
+
+			/// <summary>
+			/// 値の各バイトを10進表示
+			/// サム調整支援
+			/// </summary>
+			public string ValueDec
+			{
+				get
+				{
+					var str = string.Empty;
+					var bytes = BitConverter.GetBytes(this.val);
+					for (var i = 0; i < this.size; i++)
+						str += "{0}({1}) ".FormatEx(bytes[i], (int)(bytes[i] * Math.Pow(10, i)));
+					return str;
 				}
 			}
 
@@ -157,6 +182,34 @@ namespace DQ5SaveDataEditor
 			/// </summary>
 			public static bool NeedToCalcDiff = true;
 
+			/// <summary>
+			/// 文字列か否か
+			/// </summary>
+			public bool IsString { get; set; }
+
+			/// <summary>
+			/// 変更したい名称
+			/// </summary>
+			public string EditedName { get; set; }
+
+			/// <summary>
+			/// 名称エディタを表示するか否か
+			/// 名称1にだけ表示する
+			/// </summary>
+			public Visibility NameEditorVisibility
+			{
+				get
+				{
+					if (this.Pos >= POS_MONSTER_S && this.Pos <= POS_MONSTER_S + MONSTER_SIZE * MONSTER_DATA_SIZE)
+					{
+						var mod = (this.Pos - POS_MONSTER_S) % MONSTER_DATA_SIZE;
+						if (mod == OFFSET_M_NAME1)
+							return Visibility.Visible;
+					}
+					return Visibility.Collapsed;
+				}
+			}
+
 			#endregion
 
 			public event PropertyChangedEventHandler PropertyChanged;
@@ -171,10 +224,16 @@ namespace DQ5SaveDataEditor
 			/// </summary>
 			public static Action<long> updateDiff;
 
+			/// <summary>
+			/// 文字列変換
+			/// </summary>
+			public static Func<CData, string> getString;
+
 			public CData()
 			{
 				this.Size = 1;
 				this.Visibility = Visibility.Visible;
+				this.IsString = false;
 			}
 
 			#region Public Functions
@@ -292,6 +351,11 @@ namespace DQ5SaveDataEditor
 		const int OFFSET_M_RACE = OFFSET_M_CUR_HP + 34;	// 人間?(0=人間、1=モンスター?)
 		const int OFFSET_M_FACE = OFFSET_M_CUR_HP + 35;	// 画像?
 
+		const int OFFSET_M_NAME1 = OFFSET_M_CUR_HP + 36;	// 名前1文字目
+		const int OFFSET_M_NAME2 = OFFSET_M_CUR_HP + 39;	// 名前2文字目
+		const int OFFSET_M_NAME3 = OFFSET_M_CUR_HP + 42;	// 名前3文字目
+		const int OFFSET_M_NAME4 = OFFSET_M_CUR_HP + 45;	// 名前4文字目
+
 		const int OFFSET_M_STR = OFFSET_M_CUR_HP + 56;	// ちから
 		const int OFFSET_M_DEF = OFFSET_M_CUR_HP + 57;	// みのまもり
 		const int OFFSET_M_AGI = OFFSET_M_CUR_HP + 58;	// すばやさ
@@ -380,7 +444,10 @@ namespace DQ5SaveDataEditor
 								if (!ItemCodes.ContainsKey(val))
 									ItemCodes.Add(val, name);
 							}
-							catch { }
+							catch (Exception ex)
+							{
+								Console.WriteLine(ex);
+							}
 						}
 					}
 				}
@@ -408,7 +475,10 @@ namespace DQ5SaveDataEditor
 								if (!MonsterCodes.ContainsKey(val))
 									MonsterCodes.Add(val, name);
 							}
-							catch { }
+							catch (Exception ex)
+							{
+								Console.WriteLine(ex);
+							}
 						}
 					}
 				}
@@ -437,7 +507,10 @@ namespace DQ5SaveDataEditor
 								if (!Keys.ContainsKey(pos))
 									Keys.Add(pos, key);
 							}
-							catch { }
+							catch (Exception ex)
+							{
+								Console.WriteLine(ex);
+							}
 						}
 					}
 				}
@@ -556,6 +629,42 @@ namespace DQ5SaveDataEditor
 				item.Title = "{0:D3}の画像?".FormatEx(i + 1);
 				item.Size = 1;
 				item.Pos = pos_head + OFFSET_M_FACE;
+
+				Monsters.Add(item);
+				allItems.Add(item);
+
+				item = new CData();
+				item.Title = "{0:D3}の名前1?".FormatEx(i + 1);
+				item.Size = 3;
+				item.Pos = pos_head + OFFSET_M_NAME1;
+				item.IsString = true;
+
+				Monsters.Add(item);
+				allItems.Add(item);
+
+				item = new CData();
+				item.Title = "{0:D3}の名前2?".FormatEx(i + 1);
+				item.Size = 3;
+				item.Pos = pos_head + OFFSET_M_NAME2;
+				item.IsString = true;
+
+				Monsters.Add(item);
+				allItems.Add(item);
+
+				item = new CData();
+				item.Title = "{0:D3}の名前3?".FormatEx(i + 1);
+				item.Size = 3;
+				item.Pos = pos_head + OFFSET_M_NAME3;
+				item.IsString = true;
+
+				Monsters.Add(item);
+				allItems.Add(item);
+
+				item = new CData();
+				item.Title = "{0:D3}の名前4?".FormatEx(i + 1);
+				item.Size = 3;
+				item.Pos = pos_head + OFFSET_M_NAME4;
+				item.IsString = true;
 
 				Monsters.Add(item);
 				allItems.Add(item);
@@ -747,6 +856,40 @@ namespace DQ5SaveDataEditor
 		void cmdClear(object sender, RoutedEventArgs e)
 		{
 			this.ClearUIControls();
+		}
+
+		/// <summary>
+		/// 指定された名称を適用
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		void cmdUpdateName_Click(object sender, RoutedEventArgs e)
+		{
+			var btn = sender as Button;
+			var head = btn.Tag as CData;
+			var idx = Monsters.IndexOf(head);
+
+			var name = head.EditedName;
+			if (head.EditedName.Length > 4)
+				name = head.EditedName.Substring(0, 4);
+
+			// 1文字ずつ処理
+			for (var i = 0; i < name.Length; i++)
+			{
+				var str = name.Substring(i, 1);
+
+				var bytes = Encoding.UTF8.GetBytes(str);
+				var item = Monsters[idx + i];
+				
+				uint val = 0;
+				for (var j = 0; j < bytes.Length; j++)
+				{
+					val += (uint)(bytes[j] * Math.Pow(0x100, j));
+				}
+				item.Value = val;
+				item.EditedName = string.Empty;
+				item.OnPropertyChanged("EditedName");
+			}
 		}
 
 		#region 解析用
@@ -965,7 +1108,10 @@ namespace DQ5SaveDataEditor
 			{
 				return Convert.ToInt32(str, fromBase);
 			}
-			catch { }
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex);
+			}
 			return -1;
 		}
 

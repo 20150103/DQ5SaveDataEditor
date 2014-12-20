@@ -61,7 +61,7 @@
 								<GridViewColumn Header="値" Width="80">
 									<GridViewColumn.CellTemplate>
 										<DataTemplate>
-											<TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right"/>
+											<TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right" ToolTip="{Binding ValueDec}"/>
 										</DataTemplate>
 									</GridViewColumn.CellTemplate>
 								</GridViewColumn>
@@ -113,11 +113,25 @@
 								<GridViewColumn Header="値" Width="80">
 									<GridViewColumn.CellTemplate>
 										<DataTemplate>
-											<TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right"/>
+											<TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right" ToolTip="{Binding ValueDec}"/>
 										</DataTemplate>
 									</GridViewColumn.CellTemplate>
 								</GridViewColumn>
-								<GridViewColumn Header="説明" Width="120" DisplayMemberBinding="{Binding Text}"/>
+								<GridViewColumn Header="説明">
+									<GridViewColumn.CellTemplate>
+										<DataTemplate>
+											<StackPanel Orientation="Horizontal">
+												<TextBlock Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" Width="200"/>
+												<StackPanel Orientation="Horizontal" Visibility="{Binding NameEditorVisibility}">
+													<TextBox Text="{Binding EditedName, UpdateSourceTrigger=PropertyChanged}"
+															 Width="120" HorizontalContentAlignment="Left"
+															 ToolTip="たぶん、ひらがなorカタカナを4文字まで入力可能"/>
+													<Button Click="cmdUpdateName_Click" Tag="{Binding}" Content="名前を更新"/>
+												</StackPanel>
+											</StackPanel>
+										</DataTemplate>
+									</GridViewColumn.CellTemplate>
+								</GridViewColumn>
 							</GridView>
 						</ListView.View>
 					</ListView>
@@ -172,7 +186,7 @@
 								<GridViewColumn Header="値" Width="80">
 									<GridViewColumn.CellTemplate>
 										<DataTemplate>
-											<TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right"/>
+											<TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right" ToolTip="{Binding ValueDec}"/>
 										</DataTemplate>
 									</GridViewColumn.CellTemplate>
 								</GridViewColumn>
