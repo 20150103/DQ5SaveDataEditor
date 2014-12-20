@@ -98,7 +98,7 @@ namespace DQ5SaveDataEditor
 					this.OnPropertyChanged("Value");
 				}
 			}
-
+			/* 意味なし
 			/// <summary>
 			/// 値の各バイトを10進表示
 			/// サム調整支援
@@ -114,6 +114,7 @@ namespace DQ5SaveDataEditor
 					return str;
 				}
 			}
+			*/
 
 			int size;
 
@@ -746,7 +747,6 @@ namespace DQ5SaveDataEditor
 							diff = diff * -1;
 
 						this.txtDelta.Text = "{0}{1}".FormatEx(minus ? "-" : "+", diff);
-						this.txtDeltaHex.Text = "{0}{1:X4}".FormatEx(minus ? "-" : "+", diff);
 					};
 			}
 		}
@@ -869,6 +869,8 @@ namespace DQ5SaveDataEditor
 			var head = btn.Tag as CData;
 			var idx = Monsters.IndexOf(head);
 
+			if (idx == -1) return;
+
 			var name = head.EditedName;
 			if (head.EditedName.Length > 4)
 				name = head.EditedName.Substring(0, 4);
@@ -879,7 +881,7 @@ namespace DQ5SaveDataEditor
 				var str = name.Substring(i, 1);
 
 				var bytes = Encoding.UTF8.GetBytes(str);
-				var item = Monsters[idx + i];
+				var item = Monsters[idx + i]; // 名前が順番に並んでいる前提
 				
 				uint val = 0;
 				for (var j = 0; j < bytes.Length; j++)
@@ -889,6 +891,62 @@ namespace DQ5SaveDataEditor
 				item.Value = val;
 				item.EditedName = string.Empty;
 				item.OnPropertyChanged("EditedName");
+			}
+		}
+
+		/// <summary>
+		/// 差分の調整
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		void cmdAdjustDiff(object sender, RoutedEventArgs e)
+		{
+			var btn = sender as Button;
+			var item = btn.Tag as CData;
+
+			if (item != null)
+			{
+				if (CData.Diff > 0)
+				{
+					var bytes = BitConverter.GetBytes(item.Value);
+					for (var i = 0; i < bytes.Length; i++)
+					{
+						var val = bytes[i];
+						if (val > CData.Diff)
+							item.Value -= (uint)(CData.Diff * Math.Pow(0x100, i));
+						else
+							item.Value -= (uint)(val * Math.Pow(0x100, i));
+					}
+				}
+				else if (CData.Diff < 0)
+				{
+					var maxval = (uint)Math.Pow(0x100, item.Size) - 1; // このデータの理論上の最大値
+
+					var bytes = BitConverter.GetBytes(item.Value);
+					for (var i = 0; i < bytes.Length; i++)
+					{
+						var val = bytes[i];
+						var ubound = byte.MaxValue - val; // 加算可能な上限
+						var diff = -1 * CData.Diff;
+
+						uint delta = 0;
+
+						if (diff > ubound)
+							delta = (uint)(ubound * Math.Pow(0x100, i));
+						else
+							delta = (uint)(diff * Math.Pow(0x100, i));
+
+						if (item.Value + delta < maxval)
+						{
+							item.Value += delta;
+						}
+						else
+						{
+							item.Value = maxval;
+							break;
+						}
+					}
+				}
 			}
 		}
 
@@ -1068,7 +1126,6 @@ namespace DQ5SaveDataEditor
 			// 差分
 			CData.Diff = 0;
 			this.txtDelta.Text = "0";
-			this.txtDeltaHex.Text = "0";
 		}
 
 		void ShowError(Exception ex)
