@@ -91,7 +91,7 @@
 								  Margin="3"
 								  VerticalContentAlignment="Center"
 								  SelectionChanged="cmbMonsters_SelectionChanged"/>
-						<Label VerticalAlignment="Center">モンスターは概ね017以降</Label>
+						<Label VerticalAlignment="Center">一般モンスターは018以降</Label>
 					</StackPanel>
 					<ListView Name="lstMonsters" AlternationCount="2">
 						<ListView.ItemContainerStyle>

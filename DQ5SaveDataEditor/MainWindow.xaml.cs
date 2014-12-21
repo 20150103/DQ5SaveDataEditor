@@ -489,7 +489,7 @@ namespace DQ5SaveDataEditor
 					{
 						var line = sr.ReadLine();
 						var values = line.Split('\t');
-						if (values.Length >= 2 && !string.IsNullOrEmpty(values[0]))
+						if (values.Length >= 2 && !string.IsNullOrEmpty(values[0]) && values[0] != "コード")
 						{
 							try
 							{
