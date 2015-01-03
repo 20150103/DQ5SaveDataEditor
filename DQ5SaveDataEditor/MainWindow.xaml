@@ -199,7 +199,7 @@
 								<GridViewColumn Header="値">
 									<GridViewColumn.CellTemplate>
 										<DataTemplate>
-											<StackPanel>
+											<StackPanel Orientation="Horizontal">
 												<TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right" Width="80"/>
 												<Button Margin="1" ToolTip="差分が0に近づくように値を適当に増減します" Click="cmdAdjustDiff" Tag="{Binding}">調整</Button>
 											</StackPanel>
